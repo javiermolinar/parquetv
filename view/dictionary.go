@@ -28,18 +28,17 @@ func RenderDictionary(vm ui.DictionaryVM) string {
 
 	contentHeight := height - 3 // top(2) + bottom(1)
 
-	// Treemap on top, scrollable table below.
-	mapHeight := contentHeight / 3
-	if mapHeight < 4 {
-		mapHeight = 4
-	}
-	tableHeight := contentHeight - mapHeight - 1 // 1 for separator
+	// Side by side: table (left) + treemap (right).
+	tableWidth := width*2/5 - 1
+	mapWidth := width - tableWidth - 1
 
-	mapContent := renderTreemap(vm.AllEntries, width, mapHeight)
-	sep := dimText.Render(strings.Repeat("─", width))
-	tableContent := renderDictTable(vm, width, tableHeight)
+	tableContent := renderDictTable(vm, tableWidth, contentHeight)
+	mapContent := renderTreemap(vm.AllEntries, mapWidth, contentHeight)
 
-	content := lipgloss.JoinVertical(lipgloss.Left, mapContent, sep, tableContent)
+	tablePanel := lipgloss.NewStyle().Width(tableWidth).Height(contentHeight).Render(tableContent)
+	mapPanel := lipgloss.NewStyle().Width(mapWidth).Height(contentHeight).Render(mapContent)
+
+	content := lipgloss.JoinHorizontal(lipgloss.Top, tablePanel, mapPanel)
 
 	return lipgloss.JoinVertical(lipgloss.Left, topBar, content, bottomBar)
 }
@@ -150,7 +149,6 @@ func renderTreemap(entries []ui.DictEntryVM, width, height int) string {
 		var parts []string
 		runStart := 0
 		for runStart < width {
-			// Find run of same color.
 			ci := colors[y][runStart]
 			runEnd := runStart + 1
 			for runEnd < width && colors[y][runEnd] == ci {
@@ -158,18 +156,22 @@ func renderTreemap(entries []ui.DictEntryVM, width, height int) string {
 			}
 
 			text := string(grid[y][runStart:runEnd])
+			runW := runEnd - runStart
 
 			if ci >= 0 && ci < len(palette) {
 				style := lipgloss.NewStyle().
 					Foreground(lipgloss.Color("#000000")).
-					Background(palette[ci])
+					Background(palette[ci]).
+					Width(runW)
 				parts = append(parts, style.Render(text))
 			} else {
-				parts = append(parts, dimText.Render(text))
+				parts = append(parts, lipgloss.NewStyle().Width(runW).Foreground(colorMuted).Render(text))
 			}
 			runStart = runEnd
 		}
-		rows = append(rows, strings.Join(parts, ""))
+		// Force exact row width to prevent JoinHorizontal misalignment.
+		row := lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+		rows = append(rows, row)
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, rows...)
