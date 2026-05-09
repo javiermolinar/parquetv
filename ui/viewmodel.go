@@ -95,6 +95,48 @@ type ColumnStatsVM struct {
 	ValuesPerRow float64
 }
 
+// PageInspectorVM is the view model for the page inspector screen (Level 3).
+type PageInspectorVM struct {
+	TopBar     TopBarData
+	BottomBar  BottomBarData
+	ColumnPath string
+	ColumnType string
+	Encoding   string
+	Compression string
+	TotalCompressed   int64
+	TotalUncompressed int64
+	NumValues  int64
+
+	Pages        []PageSummaryVM
+	SelectedPage int
+	PageOffset   int // scroll offset in page list
+
+	// Value viewer (right panel).
+	Values       []PageValueVM
+	ValueOffset  int   // scroll offset in value list
+	TotalPageValues int64 // total values in selected page
+	ViewingValues bool  // true when in value viewer mode (enter pressed)
+
+	Width  int
+	Height int
+}
+
+// PageSummaryVM is the display data for one page in the page list.
+type PageSummaryVM struct {
+	Index          int
+	NumValues      int64
+	FirstRowIndex  int64
+	MinValue       string
+	MaxValue       string
+	CompressedSize int64
+}
+
+// PageValueVM is one value in the page value viewer.
+type PageValueVM struct {
+	Index int    // absolute index within the page
+	Value string // formatted value
+}
+
 // CellInspectVM holds data for the always-visible cell inspect panel.
 type CellInspectVM struct {
 	ColumnPath string

@@ -1,0 +1,30 @@
+  parquetv ─── small.parquet                                                                                            
+  TraceID  BYTE_ARRAY  DELTA_LENGTH  408 B  17 values                                                                   
+Pages                                     │ Page 0 values  (17 total)                                                   
+                                          │       #  value                                                              
+▸ Page 0                                  │ ───────────────────────────────                                             
+    rows: 17                              │       0  0329befd83f18e09add8..                                             
+    min: 0329befd83f18e09add8657139735171 │       1  033413fa209489ba1fc5..                                             
+    max: c774aba8a30ee3e320296a9fb86ef24f │       2  1be12a7bbc715b069f8c..                                             
+    size: 408 B                           │       3  26182811fabf66823e1e..                                             
+                                          │       4  2f1ec0a9e7d887bd5dad..                                             
+                                          │       5  5ab9ec8129dcf57f980c..                                             
+                                          │       6  71e853d25f53bbc0f936..                                             
+                                          │       7  8cf63549eafeeb2bde58..                                             
+                                          │       8  9726bd07ad311f67fbb0..                                             
+                                          │       9  9895a8b5ee20d33a3cd0..                                             
+                                          │      10  9b8872ef7096c9061f5e..                                             
+                                          │      11  9d4301d87933686eefa8..                                             
+                                          │      12  a35ffa9a45e22c9cc971..                                             
+                                          │      13  a62a385a39b171791fb0..                                             
+                                          │      14  ab6781b44cc247ef71dc..                                             
+                                          │      15  abf0da09d78275babb3c..                                             
+                                          │      16  c774aba8a30ee3e32029..                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+  small.parquet › RG 0 › TraceID           ↑↓ pages  ◂▸ column  enter values  d dict  f simulate  esc back              

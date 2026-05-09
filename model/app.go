@@ -12,15 +12,19 @@ import (
 // Navigation messages.
 type enterRowGroupMsg struct{ index int }
 type backToOverviewMsg struct{}
+type enterPageInspectorMsg struct{ colIndex int }
+type backToGridMsg struct{}
+type switchColumnMsg struct{ colIndex int }
 
 // App is the root BubbleTea model. It manages the navigation stack.
 type App struct {
-	file     *engine.File
-	overview FileOverviewModel
-	grid     RowGroupGridModel
-	level    int // 0=overview, 1=grid
-	width    int
-	height   int
+	file          *engine.File
+	overview      FileOverviewModel
+	grid          RowGroupGridModel
+	pageInspector PageInspectorModel
+	level         int // 0=overview, 1=grid, 2=page inspector
+	width         int
+	height        int
 }
 
 // NewApp creates the root application model.
@@ -46,6 +50,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.grid.width = msg.Width
 			a.grid.height = msg.Height
 		}
+		if a.level == 2 {
+			a.pageInspector.width = msg.Width
+			a.pageInspector.height = msg.Height
+		}
 		return a, nil
 
 	case enterRowGroupMsg:
@@ -61,6 +69,27 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.level = 0
 		return a, nil
 
+	case enterPageInspectorMsg:
+		pi, err := NewPageInspectorModel(a.file, a.grid.reader, a.grid.rgIndex, msg.colIndex, a.width, a.height)
+		if err != nil {
+			return a, nil
+		}
+		a.pageInspector = pi
+		a.level = 2
+		return a, nil
+
+	case backToGridMsg:
+		a.level = 1
+		return a, nil
+
+	case switchColumnMsg:
+		pi, err := NewPageInspectorModel(a.file, a.grid.reader, a.grid.rgIndex, msg.colIndex, a.width, a.height)
+		if err != nil {
+			return a, nil
+		}
+		a.pageInspector = pi
+		return a, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -69,24 +98,34 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Delegate to active model.
-	if a.level == 1 {
+	switch a.level {
+	case 2:
+		updated, cmd := a.pageInspector.Update(msg)
+		a.pageInspector = updated.(PageInspectorModel)
+		return a, cmd
+	case 1:
 		updated, cmd := a.grid.Update(msg)
 		a.grid = updated.(RowGroupGridModel)
 		return a, cmd
+	default:
+		updated, cmd := a.overview.Update(msg)
+		a.overview = updated.(FileOverviewModel)
+		return a, cmd
 	}
-
-	updated, cmd := a.overview.Update(msg)
-	a.overview = updated.(FileOverviewModel)
-	return a, cmd
 }
 
 func (a App) View() string {
-	if a.level == 1 {
+	switch a.level {
+	case 2:
+		vm := a.pageInspector.BuildViewModel()
+		return view.RenderPageInspector(vm)
+	case 1:
 		vm := a.grid.BuildViewModel()
 		return view.RenderRowGroupGrid(vm)
+	default:
+		vm := a.overview.BuildViewModel()
+		return view.RenderFileOverview(vm)
 	}
-	vm := a.overview.BuildViewModel()
-	return view.RenderFileOverview(vm)
 }
 
 // FileOverviewModel handles the file overview screen.

@@ -110,3 +110,19 @@ var (
 	pageBoundaryStyle = lipgloss.NewStyle().
 				  Foreground(colorMuted)
 )
+
+// Page inspector styles (Level 3).
+var (
+	pageValueNumStyle = lipgloss.NewStyle().
+				Foreground(colorMuted).
+				Align(lipgloss.Right)
+
+	pageValueHeaderStyle = lipgloss.NewStyle().
+					Foreground(colorDim).
+					Bold(true).
+					PaddingLeft(2)
+
+	pageValueCellStyle = lipgloss.NewStyle().
+				Foreground(colorPrimary).
+				PaddingLeft(2)
+)

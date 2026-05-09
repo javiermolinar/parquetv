@@ -29,19 +29,25 @@ Design doc: `tempo-brain/sources/design/parquetv-tui-explorer.md`
 - [x] ×N prefix badge on repeated cells for discoverability
 - [x] Right-aligned numeric columns, tighter max column width (18)
 
-## Next
-
 ### Phase 3 — Page Inspector
 Press enter on a column → show pages + values for that column chunk.
 
-- [ ] engine: read page headers (min/max, size, encoding, compression)
-- [ ] engine: read page values with def/rep levels
-- [ ] model: PageInspectorModel with page list + value viewer
-- [ ] view: two-panel layout (page list left, values right)
-- [ ] Page stats: min/max, compressed→uncompressed size, encoding
-- [ ] ◂▸ to switch column chunks within the same row group
-- [ ] esc → back to grid
-- [ ] Golden file tests
+- [x] engine: read page headers (min/max, size, encoding, compression)
+- [x] engine: read page values via ReadPageValues (offset/limit)
+- [x] model: PageInspectorModel with page list + value viewer modes
+- [x] view: two-panel layout (page list left, values right)
+- [x] Page stats: min/max, compressed size, encoding, compression
+- [x] ◂▸ to switch column chunks within the same row group
+- [x] esc → back to grid (two-level: esc from values → page list, esc from pages → grid)
+- [x] enter → value viewer mode with scroll controls (j/k/g/G/ctrl+d/u)
+- [x] d/f key stubs wired for future phases (dictionary + predicate simulation)
+- [x] Paginated page list with scroll indicator for large files (11+ pages)
+- [x] Golden file tests (page inspector + value viewer)
+- [x] Model tests (navigation, column switch, enter/esc, breadcrumb)
+- [x] Engine tests (page metadata, page values, offset/range validation)
+- [x] VHS visual verification on 358K-row multi-page file
+
+## Next
 
 ### Phase 4 — Column Filters
 Per-column filters with page skip + dict shortcut + cost reporting.

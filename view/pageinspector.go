@@ -1,0 +1,204 @@
+package view
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/javiermolinar/parquetv/ui"
+)
+
+const (
+	pageListMinWidth  = 35
+	pageListMaxWidth  = 42
+	pageValueNumWidth = 7  // width for "#" column in value viewer
+	pageValueColWidth = 24 // width for "value" column
+)
+
+// RenderPageInspector renders the page inspector screen (Level 3).
+func RenderPageInspector(vm ui.PageInspectorVM) string {
+	width := vm.Width
+	if width < 40 {
+		width = 80
+	}
+	height := vm.Height
+	if height < 10 {
+		height = 24
+	}
+
+	topBar := RenderTopBar(vm.TopBar, width)
+	bottomBar := RenderBottomBar(vm.BottomBar, width)
+
+	// Chrome takes 3 lines (top=2, bottom=1).
+	contentHeight := height - 3
+
+	// Two-panel layout.
+	leftWidth := pageListMaxWidth
+	if leftWidth > width/2 {
+		leftWidth = pageListMinWidth
+	}
+	rightWidth := width - leftWidth - 3 // divider + padding
+
+	left := renderPageList(vm, leftWidth, contentHeight)
+	right := renderValuePanel(vm, rightWidth, contentHeight)
+
+	leftPanel := leftPanelStyle.
+		Width(leftWidth).
+		Height(contentHeight).
+		Render(left)
+
+	rightPanel := lipgloss.NewStyle().
+		Width(rightWidth).
+		Height(contentHeight).
+		PaddingLeft(1).
+		Render(right)
+
+	content := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+
+	return lipgloss.JoinVertical(lipgloss.Left, topBar, content, bottomBar)
+}
+
+// pageEntryLines returns how many lines a page entry occupies.
+func pageEntryLines(page ui.PageSummaryVM) int {
+	lines := 3 // name + rows + size
+	if page.MinValue != "" || page.MaxValue != "" {
+		lines += 2 // min + max
+	}
+	return lines
+}
+
+// renderPageList renders the left panel with a windowed view of the page list.
+func renderPageList(vm ui.PageInspectorVM, width, height int) string {
+	var items []string
+
+	items = append(items, headerText.Render("Pages"))
+	items = append(items, "")
+
+	usedLines := 2 // header + blank
+
+	for i, page := range vm.Pages {
+		// Skip pages before the scroll offset.
+		if i < vm.PageOffset {
+			continue
+		}
+
+		// Stop if we'd exceed the available height.
+		entryLines := pageEntryLines(page)
+		if usedLines+entryLines > height {
+			break
+		}
+
+		isSelected := page.Index == vm.SelectedPage
+
+		// Page header line.
+		name := fmt.Sprintf("Page %d", page.Index)
+		if isSelected {
+			name = accentText.Render("▸ ") + selectedRow.Render(name)
+		} else {
+			name = "  " + normalText.Render(name)
+		}
+		items = append(items, name)
+		usedLines++
+
+		// Stats lines (indented).
+		valLine := fmt.Sprintf("    rows: %s", FormatNumber(page.NumValues))
+		items = append(items, dimText.Render(valLine))
+		usedLines++
+
+		if page.MinValue != "" || page.MaxValue != "" {
+			minMax := fmt.Sprintf("    min: %s", truncate(page.MinValue, width-8))
+			items = append(items, dimText.Render(minMax))
+			maxLine := fmt.Sprintf("    max: %s", truncate(page.MaxValue, width-8))
+			items = append(items, dimText.Render(maxLine))
+			usedLines += 2
+		}
+
+		sizeLine := fmt.Sprintf("    size: %s", FormatBytes(page.CompressedSize))
+		items = append(items, dimText.Render(sizeLine))
+		usedLines++
+	}
+
+	// Scroll indicator if more pages below.
+	lastVisible := vm.PageOffset
+	for i := vm.PageOffset; i < len(vm.Pages); i++ {
+		lastVisible = i
+		// Approximate: recount using the same logic.
+	}
+	// Find actual last rendered page.
+	rendered := 0
+	testLines := 2
+	for i := vm.PageOffset; i < len(vm.Pages); i++ {
+		el := pageEntryLines(vm.Pages[i])
+		if testLines+el > height {
+			break
+		}
+		testLines += el
+		rendered++
+	}
+	lastVisible = vm.PageOffset + rendered - 1
+	if lastVisible < len(vm.Pages)-1 {
+		remaining := len(vm.Pages) - lastVisible - 1
+		items = append(items, dimText.Render(fmt.Sprintf("  ▼ %d more pages", remaining)))
+	}
+
+	// Pad to fill height.
+	for len(items) < height {
+		items = append(items, "")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, items...)
+}
+
+// renderValuePanel renders the right panel with page values.
+func renderValuePanel(vm ui.PageInspectorVM, width, height int) string {
+	if len(vm.Pages) == 0 {
+		return headerText.Render("No pages")
+	}
+
+	var items []string
+
+	// Header.
+	title := fmt.Sprintf("Page %d values", vm.SelectedPage)
+	if vm.TotalPageValues > 0 {
+		title += fmt.Sprintf("  (%s total)", FormatNumber(vm.TotalPageValues))
+	}
+	items = append(items, headerText.Render(title))
+
+	// Column headers.
+	numHeader := pageValueNumStyle.Width(pageValueNumWidth).Render("#")
+	valHeader := pageValueHeaderStyle.Width(pageValueColWidth).Render("value")
+	items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numHeader, valHeader))
+
+	// Separator.
+	sepWidth := pageValueNumWidth + pageValueColWidth
+	if sepWidth > width {
+		sepWidth = width
+	}
+	items = append(items, dimText.Render(strings.Repeat("─", sepWidth)))
+
+	// Value rows.
+	for _, v := range vm.Values {
+		numCell := pageValueNumStyle.Width(pageValueNumWidth).Render(fmt.Sprintf("%d", v.Index))
+
+		valText := truncate(v.Value, pageValueColWidth-2)
+		valCell := pageValueCellStyle.Width(pageValueColWidth).Render(valText)
+
+		items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell))
+	}
+
+	// Scroll indicator.
+	if vm.TotalPageValues > 0 && vm.ViewingValues {
+		shown := vm.ValueOffset + len(vm.Values)
+		remaining := int(vm.TotalPageValues) - shown
+		if remaining > 0 {
+			items = append(items, dimText.Render(fmt.Sprintf("  ▼ %s more", FormatNumber(int64(remaining)))))
+		}
+	}
+
+	// Pad to fill height.
+	for len(items) < height {
+		items = append(items, "")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, items...)
+}

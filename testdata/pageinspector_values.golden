@@ -1,0 +1,30 @@
+  parquetv ─── small.parquet                                                                                            
+  RootServiceName  STRING  PLAIN, RLE_DICTIONARY  115 B  17 values                                                      
+Pages                                     │ Page 0 values  (17 total)                                                   
+                                          │       #  value                                                              
+▸ Page 0                                  │ ───────────────────────────────                                             
+    rows: 17                              │       0  pageserver                                                         
+    min: pageserver                       │       1  pageserver                                                         
+    max: pageserver                       │       2  pageserver                                                         
+    size: 82 B                            │       3  pageserver                                                         
+                                          │       4  pageserver                                                         
+                                          │       5  pageserver                                                         
+                                          │       6  pageserver                                                         
+                                          │       7  pageserver                                                         
+                                          │       8  pageserver                                                         
+                                          │       9  pageserver                                                         
+                                          │      10  pageserver                                                         
+                                          │      11  pageserver                                                         
+                                          │      12  pageserver                                                         
+                                          │      13  pageserver                                                         
+                                          │      14  pageserver                                                         
+                                          │      15  pageserver                                                         
+                                          │      16  pageserver                                                         
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+                                          │                                                                             
+  small.parquet › RG 0 › RootServiceName › Page 0          ↑↓ scroll  ctrl+d/u half-page  g/G jump  esc back            

@@ -253,7 +253,7 @@ func (m RowGroupGridModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			return m, func() tea.Msg { return backToOverviewMsg{} }
 		case "enter":
-			// Stub: page inspector (Phase 3)
+			return m, func() tea.Msg { return enterPageInspectorMsg{colIndex: m.cursorCol} }
 		case "r":
 			// Stub: row expansion (Phase 6)
 		case "f":
