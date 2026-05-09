@@ -58,3 +58,37 @@ type FileOverviewVM struct {
 	Width       int
 	Height      int
 }
+
+// RowGroupGridVM is the view model for the row group grid screen.
+type RowGroupGridVM struct {
+	TopBar      TopBarData
+	BottomBar   BottomBarData
+	Headers     []string  // visible column paths (simplified)
+	ColWidths   []int     // display width for each visible column
+	Rows        []GridRow // visible rows (virtual scrolled)
+	SelectedRow int       // cursor row within Rows slice
+	SelectedCol int       // cursor col within Headers slice
+	TotalRows   int64
+	TotalCols   int
+	RowOffset   int64 // absolute row index of first visible row
+	Stats       ColumnStatsVM
+	PageBounds  []int // viewport-relative row indices where a page boundary appears BEFORE the row
+	Width       int
+	Height      int
+}
+
+// GridRow is one row in the row group grid.
+type GridRow struct {
+	Index  int64    // absolute row index in the row group
+	Values []string // values for visible columns only
+}
+
+// ColumnStatsVM holds display data for the selected column stats bar.
+type ColumnStatsVM struct {
+	Path         string
+	Type         string
+	TotalBytes   int64
+	NumValues    int64
+	NumPages     int
+	ValuesPerRow float64
+}

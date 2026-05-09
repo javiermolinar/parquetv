@@ -69,3 +69,44 @@ var (
 			Border(lipgloss.NormalBorder(), false, true, false, false).
 			BorderForeground(colorMuted)
 )
+
+// Grid styles (Level 2).
+var (
+	gridHeaderStyle = lipgloss.NewStyle().
+				Foreground(colorDim).
+				Bold(true)
+
+	gridSelectedHeader = lipgloss.NewStyle().
+					Foreground(colorAccent).
+					Bold(true)
+
+	gridRowNumStyle = lipgloss.NewStyle().
+				Foreground(colorMuted).
+				Align(lipgloss.Right)
+
+	gridCellStyle = lipgloss.NewStyle().
+				Foreground(colorPrimary)
+
+	gridSelectedColCell = lipgloss.NewStyle().
+					Foreground(colorPrimary).
+					Background(colorSelected)
+
+	gridSelectedRowCell = lipgloss.NewStyle().
+					Foreground(colorPrimary).
+					Background(colorSelected)
+
+	gridCursorCell = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Bold(true)
+
+	statsPathStyle = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Bold(true)
+
+	statsDetailStyle = lipgloss.NewStyle().
+					Foreground(colorDim)
+
+	pageBoundaryStyle = lipgloss.NewStyle().
+				  Foreground(colorMuted)
+)

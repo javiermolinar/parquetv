@@ -9,10 +9,16 @@ import (
 	"github.com/javiermolinar/parquetv/view"
 )
 
+// Navigation messages.
+type enterRowGroupMsg struct{ index int }
+type backToOverviewMsg struct{}
+
 // App is the root BubbleTea model. It manages the navigation stack.
 type App struct {
 	file     *engine.File
 	overview FileOverviewModel
+	grid     RowGroupGridModel
+	level    int // 0=overview, 1=grid
 	width    int
 	height   int
 }
@@ -36,6 +42,23 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		a.overview.width = msg.Width
 		a.overview.height = msg.Height
+		if a.level == 1 {
+			a.grid.width = msg.Width
+			a.grid.height = msg.Height
+		}
+		return a, nil
+
+	case enterRowGroupMsg:
+		grid, err := NewRowGroupGridModel(a.file, msg.index, a.width, a.height)
+		if err != nil {
+			return a, nil
+		}
+		a.grid = grid
+		a.level = 1
+		return a, nil
+
+	case backToOverviewMsg:
+		a.level = 0
 		return a, nil
 
 	case tea.KeyMsg:
@@ -45,12 +68,23 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// Delegate to active model.
+	if a.level == 1 {
+		updated, cmd := a.grid.Update(msg)
+		a.grid = updated.(RowGroupGridModel)
+		return a, cmd
+	}
+
 	updated, cmd := a.overview.Update(msg)
 	a.overview = updated.(FileOverviewModel)
 	return a, cmd
 }
 
 func (a App) View() string {
+	if a.level == 1 {
+		vm := a.grid.BuildViewModel()
+		return view.RenderRowGroupGrid(vm)
+	}
 	vm := a.overview.BuildViewModel()
 	return view.RenderFileOverview(vm)
 }
@@ -98,6 +132,8 @@ func (m FileOverviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selected = 0
 		case "G":
 			m.selected = info.NumRowGroups - 1
+		case "enter":
+			return m, func() tea.Msg { return enterRowGroupMsg{index: m.selected} }
 		}
 	}
 	return m, nil
