@@ -120,13 +120,13 @@ func renderGridRows(vm ui.RowGroupGridVM) []string {
 		}
 
 		isSelectedRow := i == vm.SelectedRow
-		lines = append(lines, renderGridDataRow(row, vm.ColWidths, vm.SelectedCol, isSelectedRow))
+		lines = append(lines, renderGridDataRow(row, vm.ColWidths, vm.RightAlign, vm.SelectedCol, isSelectedRow))
 	}
 	return lines
 }
 
 // renderGridDataRow renders a single data row.
-func renderGridDataRow(row ui.GridRow, colWidths []int, selectedCol int, isSelectedRow bool) string {
+func renderGridDataRow(row ui.GridRow, colWidths []int, rightAlign []bool, selectedCol int, isSelectedRow bool) string {
 	// Row number cell.
 	rowNumStyle := gridRowNumStyle.Width(gridRowNumWidth)
 	if isSelectedRow {
@@ -153,6 +153,9 @@ func renderGridDataRow(row ui.GridRow, colWidths []int, selectedCol int, isSelec
 			style = gridSelectedColCell.Width(w).PaddingLeft(gridColPadLeft)
 		default:
 			style = gridCellStyle.Width(w).PaddingLeft(gridColPadLeft)
+		}
+		if i < len(rightAlign) && rightAlign[i] {
+			style = style.Align(lipgloss.Right).PaddingRight(1)
 		}
 		cells = append(cells, style.Render(text))
 	}

@@ -65,6 +65,7 @@ type RowGroupGridVM struct {
 	BottomBar   BottomBarData
 	Headers     []string  // visible column paths (simplified)
 	ColWidths   []int     // display width for each visible column
+	RightAlign  []bool    // true for numeric columns (right-align values)
 	Rows        []GridRow // visible rows (virtual scrolled)
 	SelectedRow int       // cursor row within Rows slice
 	SelectedCol int       // cursor col within Headers slice

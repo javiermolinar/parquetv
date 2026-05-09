@@ -13,7 +13,7 @@ import (
 const (
 	rowNumColWidth       = 7  // width for the "Row" number column
 	minColWidth          = 15 // minimum data column width
-	maxColWidth          = 25 // maximum data column width
+	maxColWidth          = 18 // maximum data column width (full name in inspect panel)
 	inspectCompactLines  = 3  // bottom panel lines when unfocused
 	inspectFocusedLines  = 8  // bottom panel lines when focused (1 header + 7 values)
 	gridChromeFixed      = 6  // top(2) + header(1) + sep(1) + statsSep(1) + bottom(1)
@@ -318,11 +318,13 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 
 	headers := make([]string, visCols)
 	colWidths := make([]int, visCols)
+	rightAlign := make([]bool, visCols)
 	for i := 0; i < visCols; i++ {
 		ci := m.colOffset + i
 		if ci < len(allHeaders) {
 			headers[i] = allHeaders[ci].Path
 			colWidths[i] = m.colWidths[ci]
+			rightAlign[i] = isNumericType(allHeaders[ci].Type)
 		}
 	}
 
@@ -439,6 +441,7 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 		},
 		Headers:     headers,
 		ColWidths:   colWidths,
+		RightAlign:  rightAlign,
 		Rows:        gridRows,
 		SelectedRow: int(m.cursorRow - m.rowOffset),
 		SelectedCol: m.cursorCol - m.colOffset,
@@ -482,6 +485,15 @@ func formatNumber(n int64) string {
 		parts = append([]string{s[start:i]}, parts...)
 	}
 	return joinStrings(parts, ",")
+}
+
+func isNumericType(typ string) bool {
+	for _, prefix := range []string{"INT", "FLOAT", "DOUBLE"} {
+		if len(typ) >= len(prefix) && typ[:len(prefix)] == prefix {
+			return true
+		}
+	}
+	return false
 }
 
 func joinStrings(parts []string, sep string) string {
