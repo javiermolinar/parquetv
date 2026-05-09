@@ -33,4 +33,4 @@ Row Groups                            │ Footer                        Schema
                                                                       INT(32,true)                  
                                                                               Servic..  STRING      
                                                                         ...                         
-  small.parquet                                               enter open  s schema  q quit  ? help  
+  small.parquet                                                     enter open  Tab schema  q quit  

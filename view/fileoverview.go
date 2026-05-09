@@ -32,7 +32,7 @@ func RenderFileOverview(vm ui.FileOverviewVM) string {
 	rightWidth := width - leftWidth - 3 // border + padding
 
 	left := renderRowGroupList(vm.RowGroups, vm.Selected, leftWidth, contentHeight)
-	right := renderFooterPanel(vm.FooterPanel, vm.SchemaTree, rightWidth, contentHeight)
+	right := renderFooterPanel(vm, rightWidth, contentHeight)
 
 	// Left panel gets a right border (the divider).
 	leftPanel := leftPanelStyle.
@@ -82,7 +82,10 @@ func renderRowGroupList(groups []ui.RowGroupSummary, selected, width, height int
 	return lipgloss.JoinVertical(lipgloss.Left, items...)
 }
 
-func renderFooterPanel(data ui.FooterData, schema *ui.SchemaNodeVM, width, height int) string {
+func renderFooterPanel(vm ui.FileOverviewVM, width, height int) string {
+	data := vm.FooterPanel
+	schema := vm.SchemaTree
+
 	// Split the right panel into two sub-columns: metadata (left) and schema tree (right).
 	metaWidth := width / 2
 	schemaWidth := width - metaWidth - 1 // 1 for gap
@@ -144,51 +147,93 @@ func renderFooterPanel(data ui.FooterData, schema *ui.SchemaNodeVM, width, heigh
 	metaPanel := lipgloss.NewStyle().Width(metaWidth).Height(height).Render(metaContent)
 
 	// --- Schema tree sub-column ---
-	var schemaSections []string
-
-	if schema != nil && len(schema.Children) > 0 {
-		schemaSections = append(schemaSections, headerText.Render("Schema"))
-
-		var treeLines []string
-		for _, child := range schema.Children {
-			renderSchemaNode(child, schemaWidth, &treeLines)
-		}
-
-		// Cap to available height.
-		max := height - 2
-		if max < 0 {
-			max = 0
-		}
-		if len(treeLines) > max {
-			treeLines = treeLines[:max]
-			treeLines = append(treeLines, dimText.Render("  ..."))
-		}
-		schemaSections = append(schemaSections, treeLines...)
-	}
-
-	schemaContent := lipgloss.JoinVertical(lipgloss.Left, schemaSections...)
+	schemaContent := renderSchemaPanel(schema, vm, schemaWidth, height)
 	schemaPanel := lipgloss.NewStyle().Width(schemaWidth).Height(height).PaddingLeft(1).Render(schemaContent)
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, metaPanel, schemaPanel)
 }
 
-// renderSchemaNode recursively renders a schema tree node.
-func renderSchemaNode(node *ui.SchemaNodeVM, width int, lines *[]string) {
+// renderSchemaPanel renders the schema tree with optional focus/scroll/cursor.
+func renderSchemaPanel(schema *ui.SchemaNodeVM, vm ui.FileOverviewVM, width, height int) string {
+	if schema == nil || len(schema.Children) == 0 {
+		return ""
+	}
+
+	var items []string
+	items = append(items, headerText.Render("Schema"))
+
+	// Flatten the tree into lines.
+	var treeLines []string
+	for _, child := range schema.Children {
+		flattenSchemaNode(child, width, &treeLines)
+	}
+
+	visible := height - 1 // minus header
+	if visible < 1 {
+		visible = 1
+	}
+
+	if vm.SchemaFocused {
+		// Windowed view with cursor.
+		for i := 0; i < visible; i++ {
+			idx := vm.SchemaOffset + i
+			if idx >= len(treeLines) {
+				items = append(items, "")
+				continue
+			}
+			if idx == vm.SchemaCursor {
+				items = append(items, schemaCursorStyle.Width(width).Render(stripAnsi(treeLines[idx])))
+			} else {
+				items = append(items, treeLines[idx])
+			}
+		}
+	} else {
+		// Static view, capped.
+		if len(treeLines) > visible {
+			treeLines = treeLines[:visible-1]
+			treeLines = append(treeLines, dimText.Render("  ..."))
+		}
+		items = append(items, treeLines...)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, items...)
+}
+
+// flattenSchemaNode recursively flattens a schema tree into styled lines.
+func flattenSchemaNode(node *ui.SchemaNodeVM, width int, lines *[]string) {
 	indent := strings.Repeat("  ", node.Depth)
 
 	if node.Leaf {
-		// Leaf: show name + type.
 		typStr := dimText.Render(node.Type)
 		nameStr := normalText.Render(truncate(node.Name, width-node.Depth*2-15))
 		*lines = append(*lines, fmt.Sprintf("%s  %s  %s", indent, nameStr, typStr))
 	} else {
-		// Group: show name with marker.
 		nameStr := accentText.Render("▼ " + node.Name)
 		*lines = append(*lines, indent+nameStr)
 		for _, child := range node.Children {
-			renderSchemaNode(child, width, lines)
+			flattenSchemaNode(child, width, lines)
 		}
 	}
+}
+
+// stripAnsi removes ANSI escape sequences for re-styling cursor lines.
+func stripAnsi(s string) string {
+	var out strings.Builder
+	inEsc := false
+	for _, r := range s {
+		if r == '\033' {
+			inEsc = true
+			continue
+		}
+		if inEsc {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				inEsc = false
+			}
+			continue
+		}
+		out.WriteRune(r)
+	}
+	return out.String()
 }
 
 func truncate(s string, maxLen int) string {

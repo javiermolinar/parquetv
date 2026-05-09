@@ -55,8 +55,14 @@ type FileOverviewVM struct {
 	Selected    int
 	FooterPanel FooterData
 	SchemaTree  *SchemaNodeVM
-	Width       int
-	Height      int
+
+	// Schema tree focus/scroll.
+	SchemaFocused bool
+	SchemaCursor  int // cursor line in flattened tree
+	SchemaOffset  int // first visible line
+
+	Width  int
+	Height int
 }
 
 // RowGroupGridVM is the view model for the row group grid screen.

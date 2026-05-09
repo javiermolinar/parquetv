@@ -111,6 +111,14 @@ var (
 				  Foreground(colorMuted)
 )
 
+// Schema tree styles.
+var (
+	schemaCursorStyle = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Bold(true)
+)
+
 // Page inspector styles (Level 3).
 var (
 	pageValueNumStyle = lipgloss.NewStyle().

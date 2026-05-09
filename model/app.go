@@ -132,8 +132,15 @@ func (a App) View() string {
 type FileOverviewModel struct {
 	file     *engine.File
 	selected int
-	width    int
-	height   int
+
+	// Schema tree focus.
+	schemaFocused bool
+	schemaCursor  int // cursor line in flattened tree
+	schemaOffset  int // first visible line
+	schemaLines   int // total flattened lines (computed once)
+
+	width  int
+	height int
 }
 
 // SetSize sets the terminal dimensions for rendering.
@@ -144,10 +151,30 @@ func (m *FileOverviewModel) SetSize(w, h int) {
 
 // NewFileOverviewModel creates a file overview model from an open file.
 func NewFileOverviewModel(file *engine.File) FileOverviewModel {
-	return FileOverviewModel{
+	m := FileOverviewModel{
 		file:     file,
 		selected: 0,
 	}
+	// Precompute flattened schema line count.
+	if info := file.Info(); info.Schema != nil {
+		vm := buildSchemaTreeVM(info.Schema, 0)
+		m.schemaLines = countSchemaLines(vm)
+	}
+	return m
+}
+
+func countSchemaLines(node *ui.SchemaNodeVM) int {
+	if node == nil {
+		return 0
+	}
+	n := 0
+	for _, child := range node.Children {
+		n++ // the node itself
+		if !child.Leaf {
+			n += countSchemaLines(child)
+		}
+	}
+	return n
 }
 
 func (m FileOverviewModel) Init() tea.Cmd {
@@ -157,6 +184,9 @@ func (m FileOverviewModel) Init() tea.Cmd {
 func (m FileOverviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.schemaFocused {
+			return m.updateSchemaFocused(msg)
+		}
 		info := m.file.Info()
 		switch msg.String() {
 		case "up", "k":
@@ -173,9 +203,78 @@ func (m FileOverviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selected = info.NumRowGroups - 1
 		case "enter":
 			return m, func() tea.Msg { return enterRowGroupMsg{index: m.selected} }
+		case "tab":
+			if m.schemaLines > 0 {
+				m.schemaFocused = true
+			}
 		}
 	}
 	return m, nil
+}
+
+func (m FileOverviewModel) updateSchemaFocused(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	visible := m.schemaVisibleLines()
+	maxCursor := m.schemaLines - 1
+	if maxCursor < 0 {
+		maxCursor = 0
+	}
+
+	switch msg.String() {
+	case "down", "j":
+		if m.schemaCursor < maxCursor {
+			m.schemaCursor++
+			m = m.ensureSchemaVisible()
+		}
+	case "up", "k":
+		if m.schemaCursor > 0 {
+			m.schemaCursor--
+			m = m.ensureSchemaVisible()
+		}
+	case "g":
+		m.schemaCursor = 0
+		m = m.ensureSchemaVisible()
+	case "G":
+		m.schemaCursor = maxCursor
+		m = m.ensureSchemaVisible()
+	case "ctrl+d":
+		m.schemaCursor += visible / 2
+		if m.schemaCursor > maxCursor {
+			m.schemaCursor = maxCursor
+		}
+		m = m.ensureSchemaVisible()
+	case "ctrl+u":
+		m.schemaCursor -= visible / 2
+		if m.schemaCursor < 0 {
+			m.schemaCursor = 0
+		}
+		m = m.ensureSchemaVisible()
+	case "esc", "tab":
+		m.schemaFocused = false
+	}
+	return m, nil
+}
+
+func (m FileOverviewModel) ensureSchemaVisible() FileOverviewModel {
+	vis := m.schemaVisibleLines()
+	if m.schemaCursor < m.schemaOffset {
+		m.schemaOffset = m.schemaCursor
+	}
+	if m.schemaCursor >= m.schemaOffset+vis {
+		m.schemaOffset = m.schemaCursor - vis + 1
+	}
+	if m.schemaOffset < 0 {
+		m.schemaOffset = 0
+	}
+	return m
+}
+
+func (m FileOverviewModel) schemaVisibleLines() int {
+	// height minus chrome(3) minus 1 for the "Schema" header.
+	vis := m.height - 3 - 1
+	if vis < 1 {
+		vis = 1
+	}
+	return vis
 }
 
 func (m FileOverviewModel) View() string {
@@ -213,6 +312,11 @@ func (m FileOverviewModel) BuildViewModel() ui.FileOverviewVM {
 		}
 	}
 
+	shortcuts := []string{"enter open", "Tab schema", "q quit"}
+	if m.schemaFocused {
+		shortcuts = []string{"↑↓ scroll", "g/G jump", "Tab/esc back"}
+	}
+
 	return ui.FileOverviewVM{
 		TopBar: ui.TopBarData{
 			FileName:     filepath.Base(info.Path),
@@ -224,7 +328,7 @@ func (m FileOverviewModel) BuildViewModel() ui.FileOverviewVM {
 		},
 		BottomBar: ui.BottomBarData{
 			Breadcrumb: filepath.Base(info.Path),
-			Shortcuts:  []string{"enter open", "s schema", "q quit", "? help"},
+			Shortcuts:  shortcuts,
 		},
 		RowGroups:   groups,
 		Selected:    m.selected,
@@ -234,9 +338,12 @@ func (m FileOverviewModel) BuildViewModel() ui.FileOverviewVM {
 			TopColumns:     info.TopColumns,
 			KeyValues:      info.KeyValues,
 		},
-		SchemaTree: buildSchemaTreeVM(info.Schema, 0),
-		Width:      m.width,
-		Height:     m.height,
+		SchemaTree:    buildSchemaTreeVM(info.Schema, 0),
+		SchemaFocused: m.schemaFocused,
+		SchemaCursor:  m.schemaCursor,
+		SchemaOffset:  m.schemaOffset,
+		Width:         m.width,
+		Height:        m.height,
 	}
 }
 
