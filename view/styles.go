@@ -125,4 +125,13 @@ var (
 	pageValueCellStyle = lipgloss.NewStyle().
 				Foreground(colorPrimary).
 				PaddingLeft(2)
+
+	pageValueHexHeaderStyle = lipgloss.NewStyle().
+					Foreground(colorDim).
+					Bold(true).
+					PaddingLeft(1)
+
+	pageValueHexStyle = lipgloss.NewStyle().
+				Foreground(colorMuted).
+				PaddingLeft(1)
 )

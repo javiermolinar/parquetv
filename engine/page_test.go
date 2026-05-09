@@ -149,10 +149,13 @@ func TestReadPageValues(t *testing.T) {
 	}
 
 	for i, v := range vals {
-		if v == "" {
-			t.Errorf("value %d is empty", i)
+		if v.Formatted == "" {
+			t.Errorf("value %d formatted is empty", i)
 		}
-		t.Logf("  val[%d] = %s", i, v)
+		if v.HexDump == "" {
+			t.Errorf("value %d hex is empty", i)
+		}
+		t.Logf("  val[%d] = %-34s  hex=%s  (%d bytes)", i, v.Formatted, v.HexDump, v.ByteLen)
 	}
 	t.Logf("total values in page = %d", total)
 }
@@ -187,8 +190,8 @@ func TestReadPageValuesWithOffset(t *testing.T) {
 
 	// Values at offset 5 should match.
 	for i, v := range offsetVals {
-		if i+5 < len(allVals) && v != allVals[i+5] {
-			t.Errorf("offset val[%d] = %q, want %q", i, v, allVals[i+5])
+		if i+5 < len(allVals) && v.Formatted != allVals[i+5].Formatted {
+			t.Errorf("offset val[%d] = %q, want %q", i, v.Formatted, allVals[i+5].Formatted)
 		}
 	}
 }
@@ -236,10 +239,18 @@ func TestReadPageValuesRootServiceName(t *testing.T) {
 
 	t.Logf("RootServiceName page 0: total=%d", total)
 	for i, v := range vals {
-		t.Logf("  val[%d] = %s", i, v)
+		t.Logf("  val[%d] = %-20s  hex=%s  (%d bytes)", i, v.Formatted, v.HexDump, v.ByteLen)
 	}
 
 	if len(vals) == 0 {
 		t.Error("no values returned")
+	}
+
+	// String values should have readable hex.
+	if vals[0].HexDump == "" {
+		t.Error("string value hex is empty")
+	}
+	if vals[0].ByteLen == 0 {
+		t.Error("string value byte length is 0")
 	}
 }

@@ -13,6 +13,7 @@ const (
 	pageListMaxWidth  = 42
 	pageValueNumWidth = 7  // width for "#" column in value viewer
 	pageValueColWidth = 24 // width for "value" column
+	pageValueHexWidth = 50 // width for "hex" column
 )
 
 // RenderPageInspector renders the page inspector screen (Level 3).
@@ -40,7 +41,7 @@ func RenderPageInspector(vm ui.PageInspectorVM) string {
 	rightWidth := width - leftWidth - 3 // divider + padding
 
 	left := renderPageList(vm, leftWidth, contentHeight)
-	right := renderValuePanel(vm, rightWidth, contentHeight)
+	right := renderValuePanel(vm, rightWidth-1, contentHeight) // -1 for PaddingLeft(1)
 
 	leftPanel := leftPanelStyle.
 		Width(leftWidth).
@@ -149,7 +150,8 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	return lipgloss.JoinVertical(lipgloss.Left, items...)
 }
 
-// renderValuePanel renders the right panel with page values.
+// renderValuePanel renders the right panel with page values in hex-editor style.
+// Shows: index | decoded value | hex dump.
 func renderValuePanel(vm ui.PageInspectorVM, width, height int) string {
 	if len(vm.Pages) == 0 {
 		return headerText.Render("No pages")
@@ -164,13 +166,28 @@ func renderValuePanel(vm ui.PageInspectorVM, width, height int) string {
 	}
 	items = append(items, headerText.Render(title))
 
+	// Compute column widths based on available space.
+	hexW := width - pageValueNumWidth - pageValueColWidth
+	if hexW < 20 {
+		hexW = 0 // hide hex column on narrow terminals
+	}
+	valW := pageValueColWidth
+	if hexW == 0 {
+		valW = width - pageValueNumWidth // give all space to value
+	}
+
 	// Column headers.
 	numHeader := pageValueNumStyle.Width(pageValueNumWidth).Render("#")
-	valHeader := pageValueHeaderStyle.Width(pageValueColWidth).Render("value")
-	items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numHeader, valHeader))
+	valHeader := pageValueHeaderStyle.Width(valW).Render("value")
+	if hexW > 0 {
+		hexHeader := pageValueHexHeaderStyle.Width(hexW).Render("hex")
+		items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numHeader, valHeader, hexHeader))
+	} else {
+		items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numHeader, valHeader))
+	}
 
 	// Separator.
-	sepWidth := pageValueNumWidth + pageValueColWidth
+	sepWidth := pageValueNumWidth + valW + hexW
 	if sepWidth > width {
 		sepWidth = width
 	}
@@ -179,11 +196,16 @@ func renderValuePanel(vm ui.PageInspectorVM, width, height int) string {
 	// Value rows.
 	for _, v := range vm.Values {
 		numCell := pageValueNumStyle.Width(pageValueNumWidth).Render(fmt.Sprintf("%d", v.Index))
+		valText := truncate(v.Value, valW-2)
+		valCell := pageValueCellStyle.Width(valW).Render(valText)
 
-		valText := truncate(v.Value, pageValueColWidth-2)
-		valCell := pageValueCellStyle.Width(pageValueColWidth).Render(valText)
-
-		items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell))
+		if hexW > 0 {
+			hexText := truncate(v.HexDump, hexW-2)
+			hexCell := pageValueHexStyle.Width(hexW).Render(hexText)
+			items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell, hexCell))
+		} else {
+			items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell))
+		}
 	}
 
 	// Scroll indicator.

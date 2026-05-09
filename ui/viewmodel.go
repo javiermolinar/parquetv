@@ -133,8 +133,10 @@ type PageSummaryVM struct {
 
 // PageValueVM is one value in the page value viewer.
 type PageValueVM struct {
-	Index int    // absolute index within the page
-	Value string // formatted value
+	Index   int    // absolute index within the page
+	Value   string // formatted/decoded value
+	HexDump string // spaced hex: "03 29 be fd..."
+	ByteLen int    // raw byte count
 }
 
 // CellInspectVM holds data for the always-visible cell inspect panel.

@@ -30,7 +30,7 @@ type PageInspectorModel struct {
 	pageOffset   int // first visible page in left panel
 
 	// Value viewer state.
-	values        []string
+	values        []engine.PageValueDetail
 	totalPageVals int64
 	valueOffset   int  // scroll offset in value list
 	viewingValues bool // when true, keys control the value viewer
@@ -282,8 +282,10 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 	var values []ui.PageValueVM
 	for i, v := range m.values {
 		values = append(values, ui.PageValueVM{
-			Index: m.valueOffset + i,
-			Value: v,
+			Index:   m.valueOffset + i,
+			Value:   v.Formatted,
+			HexDump: v.HexDump,
+			ByteLen: v.ByteLen,
 		})
 	}
 

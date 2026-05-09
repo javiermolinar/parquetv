@@ -102,9 +102,17 @@ func (r *RowGroupReader) ReadColumnChunkDetail(colIndex int) (ColumnChunkDetail,
 	return detail, nil
 }
 
-// ReadPageValues reads formatted values from a specific page of a column.
+// PageValueDetail holds a decoded page value with its raw byte representation.
+type PageValueDetail struct {
+	Formatted string // human-readable value
+	HexDump   string // spaced hex: "03 29 be fd..."
+	ByteLen   int
+}
+
+// ReadPageValues reads values from a specific page of a column.
+// Returns both formatted strings and raw hex for hex-editor style display.
 // offset and limit control pagination within the page.
-func (r *RowGroupReader) ReadPageValues(colIndex, pageIndex int, offset, limit int) ([]string, int64, error) {
+func (r *RowGroupReader) ReadPageValues(colIndex, pageIndex int, offset, limit int) ([]PageValueDetail, int64, error) {
 	chunks := r.rg.ColumnChunks()
 	if colIndex < 0 || colIndex >= len(chunks) {
 		return nil, 0, fmt.Errorf("column %d out of range [0, %d)", colIndex, len(chunks))
@@ -148,7 +156,7 @@ func (r *RowGroupReader) ReadPageValues(colIndex, pageIndex int, offset, limit i
 	}
 
 	// Read requested values.
-	result := make([]string, 0, limit)
+	result := make([]PageValueDetail, 0, limit)
 	remaining := limit
 	for remaining > 0 {
 		toRead := remaining
@@ -157,7 +165,12 @@ func (r *RowGroupReader) ReadPageValues(colIndex, pageIndex int, offset, limit i
 		}
 		n, err := vr.ReadValues(buf[:toRead])
 		for i := 0; i < n; i++ {
-			result = append(result, FormatValue(buf[i]))
+			raw := valueRawBytes(buf[i])
+			result = append(result, PageValueDetail{
+				Formatted: FormatValue(buf[i]),
+				HexDump:   FormatHexDump(raw, 16),
+				ByteLen:   len(raw),
+			})
 		}
 		remaining -= n
 		if n == 0 || err != nil {
