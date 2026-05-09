@@ -1,24 +1,24 @@
   parquetv ─── small.parquet                                                                                            
   Row Group 0  17 rows  54.7 KB                                                                                         
-    Row [TraceID]     TraceIDText   StartTimeUnixN..   EndTimeUnixN..   DurationN..   RootServiceN..   RootSpanN..      
-────── ───────────── ───────────── ────────────────── ──────────────── ───────────── ──────────────── ─────────────     
-      0 0329befd8..   329befd83..   17781642816558..   177816428165..   270748        pageserver       GET_PAGE         
-      1 033413fa2..   33413fa20..   17781642722245..   177816427222..   454421        pageserver       GET_PAGE         
-      2 1be12a7bb..   1be12a7bb..   17781642216098..   177816422161..   1361617       pageserver       GET_PAGE         
-      3 26182811f..   26182811f..   17781643055172..   177816430551..   1023596       pageserver       GET_PAGE         
-      4 2f1ec0a9e..   2f1ec0a9e..   17781641598411..   177816415984..   395271        pageserver       GET_PAGE         
-      5 5ab9ec812..   5ab9ec812..   17781641300662..   177816413006..   347945        pageserver       GET_PAGE         
-      6 71e853d25..   71e853d25..   17781642937307..   177816429373..   511904        pageserver       GET_PAGE         
-      7 8cf63549e..   8cf63549e..   17781643055173..   177816430551..   872463        pageserver       GET_VECTO..      
-      8 9726bd07a..   9726bd07a..   17781642498150..   177816424981..   268278        pageserver       GET_PAGE         
-      9 9895a8b5e..   9895a8b5e..   17781642703868..   177816427038..   324451        pageserver       GET_PAGE         
-     10 9b8872ef7..   9b8872ef7..   17781642360608..   177816423606..   301082        pageserver       GET_PAGE         
-     11 9d4301d87..   9d4301d87..   17781642351688..   177816423516..   311555        pageserver       GET_PAGE         
-     12 a35ffa9a4..   a35ffa9a4..   17781641984677..   177816419846..   493452        pageserver       GET_PAGE         
-     13 a62a385a3..   a62a385a3..   17781642166525..   177816421665..   280831        pageserver       GET_PAGE         
-     14 ab6781b44..   ab6781b44..   17781642403009..   177816424030..   296115        pageserver       GET_PAGE         
-     15 abf0da09d..   abf0da09d..   17781642255906..   177816422559..   299900        pageserver       GET_PAGE         
-     16 c774aba8a..   c774aba8a..   17781642528236..   177816425282..   1265375       pageserver       GET_PAGE         
+    Row  [TraceID]      TraceIDText    StartTimeUnixN..   EndTimeUnixN..   DurationNano   RootServiceN..   RootSpanName 
+────── ────────────── ────────────── ────────────────── ──────────────── ────────────── ──────────────── ────────────── 
+      0  0329befd83..   329befd83f..   17781642816558..   177816428165..   270748         pageserver       GET_PAGE     
+      1  033413fa20..   33413fa209..   17781642722245..   177816427222..   454421         pageserver       GET_PAGE     
+      2  1be12a7bbc..   1be12a7bbc..   17781642216098..   177816422161..   1361617        pageserver       GET_PAGE     
+      3  26182811fa..   26182811fa..   17781643055172..   177816430551..   1023596        pageserver       GET_PAGE     
+      4  2f1ec0a9e7..   2f1ec0a9e7..   17781641598411..   177816415984..   395271         pageserver       GET_PAGE     
+      5  5ab9ec8129..   5ab9ec8129..   17781641300662..   177816413006..   347945         pageserver       GET_PAGE     
+      6  71e853d25f..   71e853d25f..   17781642937307..   177816429373..   511904         pageserver       GET_PAGE     
+      7  8cf63549ea..   8cf63549ea..   17781643055173..   177816430551..   872463         pageserver       GET_VECTORED 
+      8  9726bd07ad..   9726bd07ad..   17781642498150..   177816424981..   268278         pageserver       GET_PAGE     
+      9  9895a8b5ee..   9895a8b5ee..   17781642703868..   177816427038..   324451         pageserver       GET_PAGE     
+     10  9b8872ef70..   9b8872ef70..   17781642360608..   177816423606..   301082         pageserver       GET_PAGE     
+     11  9d4301d879..   9d4301d879..   17781642351688..   177816423516..   311555         pageserver       GET_PAGE     
+     12  a35ffa9a45..   a35ffa9a45..   17781641984677..   177816419846..   493452         pageserver       GET_PAGE     
+     13  a62a385a39..   a62a385a39..   17781642166525..   177816421665..   280831         pageserver       GET_PAGE     
+     14  ab6781b44c..   ab6781b44c..   17781642403009..   177816424030..   296115         pageserver       GET_PAGE     
+     15  abf0da09d7..   abf0da09d7..   17781642255906..   177816422559..   299900         pageserver       GET_PAGE     
+     16  c774aba8a3..   c774aba8a3..   17781642528236..   177816425282..   1265375        pageserver       GET_PAGE     
                                                                                                                         
                                                                                                                         
                                                                                                                         

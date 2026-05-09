@@ -8,7 +8,10 @@ import (
 	"github.com/javiermolinar/parquetv/ui"
 )
 
-const gridRowNumWidth = 7
+const (
+	gridRowNumWidth = 7
+	gridColPadLeft  = 2 // left padding inside each data column
+)
 
 // RenderRowGroupGrid renders the row group grid screen.
 func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
@@ -75,10 +78,10 @@ func renderGridHeader(headers []string, colWidths []int, selectedCol int) string
 			w = colWidths[i]
 		}
 		if i == selectedCol {
-			text := "[" + truncate(h, w-5) + "]"
-			cells = append(cells, gridSelectedHeader.Width(w).PaddingLeft(1).Render(text))
+			text := "[" + truncate(h, w-gridColPadLeft-4) + "]"
+			cells = append(cells, gridSelectedHeader.Width(w).PaddingLeft(gridColPadLeft).Render(text))
 		} else {
-			cells = append(cells, gridHeaderStyle.Width(w).PaddingLeft(1).Render(truncate(h, w-3)))
+			cells = append(cells, gridHeaderStyle.Width(w).PaddingLeft(gridColPadLeft).Render(truncate(h, w-gridColPadLeft-1)))
 		}
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, cells...)
@@ -132,18 +135,18 @@ func renderGridDataRow(row ui.GridRow, colWidths []int, selectedCol int, isSelec
 		if i < len(colWidths) {
 			w = colWidths[i]
 		}
-		text := truncate(v, w-3)
+		text := truncate(v, w-gridColPadLeft-1)
 
 		var style lipgloss.Style
 		switch {
 		case isSelectedRow && i == selectedCol:
-			style = gridCursorCell.Width(w).PaddingLeft(1)
+			style = gridCursorCell.Width(w).PaddingLeft(gridColPadLeft)
 		case isSelectedRow:
-			style = gridSelectedRowCell.Width(w).PaddingLeft(1)
+			style = gridSelectedRowCell.Width(w).PaddingLeft(gridColPadLeft)
 		case i == selectedCol:
-			style = gridSelectedColCell.Width(w).PaddingLeft(1)
+			style = gridSelectedColCell.Width(w).PaddingLeft(gridColPadLeft)
 		default:
-			style = gridCellStyle.Width(w).PaddingLeft(1)
+			style = gridCellStyle.Width(w).PaddingLeft(gridColPadLeft)
 		}
 		cells = append(cells, style.Render(text))
 	}

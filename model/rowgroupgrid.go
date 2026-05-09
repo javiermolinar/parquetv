@@ -12,8 +12,8 @@ import (
 
 const (
 	rowNumColWidth = 7  // width for the "Row" number column
-	minColWidth    = 14 // minimum data column width
-	maxColWidth    = 24 // maximum data column width
+	minColWidth    = 15 // minimum data column width
+	maxColWidth    = 25 // maximum data column width
 	gridChromeRows = 8  // top(2) + header(1) + sep(1) + statsSep(1) + stats(2) + bottom(1)
 )
 
