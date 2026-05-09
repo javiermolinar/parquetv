@@ -53,6 +53,13 @@ Press enter on a column → show pages + values for that column chunk.
   - Level 2: RG context + cursor row/col + column stats
   - Level 3: hierarchy header (RG → Column) + page list
 
+### Phase 9 — Schema Tree (2183d2b)
+- [x] Always-visible schema tree in Level 1 right panel
+- [x] Strip list/element wrapper nodes (clean Parquet nesting)
+- [x] Group nodes (▼) in accent color, leaf nodes with types
+- [x] Height-capped to remaining panel space with ... truncation
+- [x] No toggle — fills available space below top columns and KV metadata
+
 ## Next
 
 ### Phase 4 — Column Filters
@@ -91,10 +98,6 @@ Two-field filter for Attrs.Key + Value with cost breakdown.
 ### Phase 8 — Dictionary View + Predicate Simulation
 - [ ] d key: dictionary entries, frequencies, integer codes
 - [ ] f in Level 3: simulate pushdown, annotate pages SKIP/READ
-
-### Phase 9 — Schema Tree Side Panel
-- [ ] s key in Level 1: toggleable schema tree
-- [ ] Nested tree with types, leaf indicators
 
 ### Phase 10 — Content/Inspect Panel (Level 3)
 - [ ] i key: detailed hex, binary, decoded, encoding details
