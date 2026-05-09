@@ -83,29 +83,31 @@ func renderRowGroupList(groups []ui.RowGroupSummary, selected, width, height int
 }
 
 func renderFooterPanel(data ui.FooterData, schema *ui.SchemaNodeVM, width, height int) string {
-	var sections []string
+	// Split the right panel into two sub-columns: metadata (left) and schema tree (right).
+	metaWidth := width / 2
+	schemaWidth := width - metaWidth - 1 // 1 for gap
 
-	sections = append(sections, headerText.Render("Footer"))
+	// --- Metadata sub-column ---
+	var metaSections []string
 
-	// Schema info.
-	sections = append(sections,
+	metaSections = append(metaSections, headerText.Render("Footer"))
+	metaSections = append(metaSections,
 		normalText.Render(fmt.Sprintf("Schema: %d leaf columns", data.NumLeafColumns)),
 	)
 	if data.Format != "" {
-		sections = append(sections,
+		metaSections = append(metaSections,
 			normalText.Render(fmt.Sprintf("Format: %s", data.Format)),
 		)
 	}
 
-	// Top columns by size — use lipgloss table.
 	if len(data.TopColumns) > 0 {
-		sections = append(sections, "") // spacer
-		sections = append(sections, headerText.Render("Top columns by size:"))
+		metaSections = append(metaSections, "") // spacer
+		metaSections = append(metaSections, headerText.Render("Top columns by size:"))
 
 		rows := make([][]string, 0, len(data.TopColumns))
 		for _, col := range data.TopColumns {
 			rows = append(rows, []string{
-				truncate(col.Path, width-12),
+				truncate(col.Path, metaWidth-12),
 				FormatBytes(col.TotalBytes),
 			})
 		}
@@ -125,47 +127,49 @@ func renderFooterPanel(data ui.FooterData, schema *ui.SchemaNodeVM, width, heigh
 					PaddingLeft(1)
 			})
 
-		sections = append(sections, t.Render())
+		metaSections = append(metaSections, t.Render())
 	}
 
-	// Key-value metadata.
 	if len(data.KeyValues) > 0 {
-		sections = append(sections, "") // spacer
-		sections = append(sections, headerText.Render("Key-value metadata:"))
+		metaSections = append(metaSections, "") // spacer
+		metaSections = append(metaSections, headerText.Render("Key-value metadata:"))
 
 		for k, v := range data.KeyValues {
-			entry := fmt.Sprintf("  %s = %s", k, truncate(v, width-len(k)-6))
-			sections = append(sections, dimText.Render(entry))
+			entry := fmt.Sprintf("  %s = %s", k, truncate(v, metaWidth-len(k)-6))
+			metaSections = append(metaSections, dimText.Render(entry))
 		}
 	}
 
-	// Schema tree — fill remaining space.
+	metaContent := lipgloss.JoinVertical(lipgloss.Left, metaSections...)
+	metaPanel := lipgloss.NewStyle().Width(metaWidth).Height(height).Render(metaContent)
+
+	// --- Schema tree sub-column ---
+	var schemaSections []string
+
 	if schema != nil && len(schema.Children) > 0 {
-		sections = append(sections, "") // spacer
-		sections = append(sections, headerText.Render("Schema:"))
+		schemaSections = append(schemaSections, headerText.Render("Schema"))
 
 		var treeLines []string
 		for _, child := range schema.Children {
-			renderSchemaNode(child, width, &treeLines)
+			renderSchemaNode(child, schemaWidth, &treeLines)
 		}
 
-		// Count actual rendered lines (sections may contain multi-line table output).
-		usedLines := 0
-		for _, s := range sections {
-			usedLines += strings.Count(s, "\n") + 1
+		// Cap to available height.
+		max := height - 2
+		if max < 0 {
+			max = 0
 		}
-		remaining := height - usedLines - 1
-		if remaining < 0 {
-			remaining = 0
-		}
-		if len(treeLines) > remaining {
-			treeLines = treeLines[:remaining]
+		if len(treeLines) > max {
+			treeLines = treeLines[:max]
 			treeLines = append(treeLines, dimText.Render("  ..."))
 		}
-		sections = append(sections, treeLines...)
+		schemaSections = append(schemaSections, treeLines...)
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	schemaContent := lipgloss.JoinVertical(lipgloss.Left, schemaSections...)
+	schemaPanel := lipgloss.NewStyle().Width(schemaWidth).Height(height).PaddingLeft(1).Render(schemaContent)
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, metaPanel, schemaPanel)
 }
 
 // renderSchemaNode recursively renders a schema tree node.
