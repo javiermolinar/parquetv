@@ -32,7 +32,8 @@ type PageInspectorModel struct {
 	// Value viewer state.
 	values        []engine.PageValueDetail
 	totalPageVals int64
-	valueOffset   int  // scroll offset in value list
+	valueCursor   int  // absolute value index (0-based within page)
+	valueOffset   int  // first visible value index
 	viewingValues bool // when true, keys control the value viewer
 
 	width  int
@@ -143,7 +144,9 @@ func (m PageInspectorModel) updatePageList(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 	case "enter":
 		if numPages > 0 {
 			m.viewingValues = true
+			m.valueCursor = 0
 			m.valueOffset = 0
+			m = m.loadPageValues()
 		}
 	case "d":
 		// Stub: dictionary view (Phase 8)
@@ -158,47 +161,68 @@ func (m PageInspectorModel) updatePageList(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 // updateValueViewer handles keys in value viewer mode.
 func (m PageInspectorModel) updateValueViewer(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	visHeight := m.valueViewerHeight()
-	maxOffset := int(m.totalPageVals) - visHeight
-	if maxOffset < 0 {
-		maxOffset = 0
+	maxCursor := int(m.totalPageVals) - 1
+	if maxCursor < 0 {
+		maxCursor = 0
 	}
 
 	switch msg.String() {
 	case "up", "k":
-		if m.valueOffset > 0 {
-			m.valueOffset--
+		if m.valueCursor > 0 {
+			m.valueCursor--
+			m = m.ensureValueVisible()
 			m = m.loadPageValues()
 		}
 	case "down", "j":
-		if m.valueOffset < maxOffset {
-			m.valueOffset++
+		if m.valueCursor < maxCursor {
+			m.valueCursor++
+			m = m.ensureValueVisible()
 			m = m.loadPageValues()
 		}
 	case "g":
-		m.valueOffset = 0
+		m.valueCursor = 0
+		m = m.ensureValueVisible()
 		m = m.loadPageValues()
 	case "G":
-		m.valueOffset = maxOffset
+		m.valueCursor = maxCursor
+		m = m.ensureValueVisible()
 		m = m.loadPageValues()
 	case "ctrl+d":
 		half := visHeight / 2
-		m.valueOffset += half
-		if m.valueOffset > maxOffset {
-			m.valueOffset = maxOffset
+		m.valueCursor += half
+		if m.valueCursor > maxCursor {
+			m.valueCursor = maxCursor
 		}
+		m = m.ensureValueVisible()
 		m = m.loadPageValues()
 	case "ctrl+u":
 		half := visHeight / 2
-		m.valueOffset -= half
-		if m.valueOffset < 0 {
-			m.valueOffset = 0
+		m.valueCursor -= half
+		if m.valueCursor < 0 {
+			m.valueCursor = 0
 		}
+		m = m.ensureValueVisible()
 		m = m.loadPageValues()
 	case "esc":
 		m.viewingValues = false
+		m.valueCursor = 0
 		m.valueOffset = 0
 	}
 	return m, nil
+}
+
+func (m PageInspectorModel) ensureValueVisible() PageInspectorModel {
+	vis := m.valueViewerHeight()
+	if m.valueCursor < m.valueOffset {
+		m.valueOffset = m.valueCursor
+	}
+	if m.valueCursor >= m.valueOffset+vis {
+		m.valueOffset = m.valueCursor - vis + 1
+	}
+	if m.valueOffset < 0 {
+		m.valueOffset = 0
+	}
+	return m
 }
 
 func (m PageInspectorModel) ensurePageVisible() PageInspectorModel {
@@ -314,6 +338,7 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 		PageOffset:      m.pageOffset,
 		Values:          values,
 		ValueOffset:     m.valueOffset,
+		SelectedValue:   m.valueCursor - m.valueOffset,
 		TotalPageValues: m.totalPageVals,
 		ViewingValues:   m.viewingValues,
 		Width:           m.width,

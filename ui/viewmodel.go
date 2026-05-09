@@ -112,10 +112,11 @@ type PageInspectorVM struct {
 	PageOffset   int // scroll offset in page list
 
 	// Value viewer (right panel).
-	Values       []PageValueVM
-	ValueOffset  int   // scroll offset in value list
+	Values          []PageValueVM
+	ValueOffset     int   // scroll offset in value list
+	SelectedValue   int   // cursor position within Values slice
 	TotalPageValues int64 // total values in selected page
-	ViewingValues bool  // true when in value viewer mode (enter pressed)
+	ViewingValues   bool  // true when in value viewer mode (enter pressed)
 
 	Width  int
 	Height int

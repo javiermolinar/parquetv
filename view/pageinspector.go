@@ -194,14 +194,26 @@ func renderValuePanel(vm ui.PageInspectorVM, width, height int) string {
 	items = append(items, dimText.Render(strings.Repeat("─", sepWidth)))
 
 	// Value rows.
-	for _, v := range vm.Values {
-		numCell := pageValueNumStyle.Width(pageValueNumWidth).Render(fmt.Sprintf("%d", v.Index))
+	for i, v := range vm.Values {
+		isCursor := vm.ViewingValues && i == vm.SelectedValue
+
+		// Pick styles based on cursor.
+		numStyle := pageValueNumStyle
+		vStyle := pageValueCellStyle
+		hStyle := pageValueHexStyle
+		if isCursor {
+			numStyle = pageValueCursorNum
+			vStyle = pageValueCursorCell
+			hStyle = pageValueCursorHex
+		}
+
+		numCell := numStyle.Width(pageValueNumWidth).Render(fmt.Sprintf("%d", v.Index))
 		valText := truncate(v.Value, valW-2)
-		valCell := pageValueCellStyle.Width(valW).Render(valText)
+		valCell := vStyle.Width(valW).Render(valText)
 
 		if hexW > 0 {
 			hexText := truncate(v.HexDump, hexW-2)
-			hexCell := pageValueHexStyle.Width(hexW).Render(hexText)
+			hexCell := hStyle.Width(hexW).Render(hexText)
 			items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell, hexCell))
 		} else {
 			items = append(items, lipgloss.JoinHorizontal(lipgloss.Top, numCell, valCell))

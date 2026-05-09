@@ -134,4 +134,21 @@ var (
 	pageValueHexStyle = lipgloss.NewStyle().
 				Foreground(colorMuted).
 				PaddingLeft(1)
+
+	// Cursor row (value viewer active).
+	pageValueCursorNum = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Align(lipgloss.Right)
+
+	pageValueCursorCell = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Bold(true).
+				PaddingLeft(2)
+
+	pageValueCursorHex = lipgloss.NewStyle().
+				Foreground(colorDim).
+				Background(colorSelected).
+				PaddingLeft(1)
 )
