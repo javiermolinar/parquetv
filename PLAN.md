@@ -46,6 +46,12 @@ Press enter on a column → show pages + values for that column chunk.
 - [x] Model tests (navigation, column switch, enter/esc, breadcrumb)
 - [x] Engine tests (page metadata, page values, offset/range validation)
 - [x] VHS visual verification on 358K-row multi-page file
+- [x] Hex editor style value viewer: decoded value + spaced hex side by side
+- [x] Cursor highlight in value viewer (j/k moves, accent+background row)
+- [x] Persistent left navigation panel (38 chars) across all three levels:
+  - Level 1: row group list (standardized width)
+  - Level 2: RG context + cursor row/col + column stats
+  - Level 3: hierarchy header (RG → Column) + page list
 
 ## Next
 
