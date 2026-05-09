@@ -104,11 +104,8 @@ Two-field filter for Attrs.Key + Value with cost breakdown.
 - [ ] Key scan + value lookup at matched positions
 - [ ] Cost reporting showing the full key scan cost
 
-### Phase 8b — Live Pushdown Annotation (ac63842)
-- [x] Live SKIP/READ badges on pages when viewing values
-- [x] No key press needed — annotations update as cursor moves
-- [x] Raw byte comparison for correct ordering across all parquet types
-- [x] Green READ / red SKIP badges next to page names
+### Phase 8b — Predicate Simulation
+- [ ] f in Level 3: simulate pushdown, annotate pages SKIP/READ
 
 ### Phase 10 — Content/Inspect Panel (Level 3)
 - [ ] i key: detailed hex, binary, decoded, encoding details
