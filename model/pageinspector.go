@@ -300,6 +300,22 @@ func (m PageInspectorModel) dictVisibleLines() int {
 	return vis
 }
 
+func (m PageInspectorModel) prevColumnName() string {
+	headers := m.reader.Headers()
+	if m.colIndex > 0 && m.colIndex-1 < len(headers) {
+		return headers[m.colIndex-1].Path
+	}
+	return ""
+}
+
+func (m PageInspectorModel) nextColumnName() string {
+	headers := m.reader.Headers()
+	if m.colIndex+1 < len(headers) {
+		return headers[m.colIndex+1].Path
+	}
+	return ""
+}
+
 func (m PageInspectorModel) ensureValueVisible() PageInspectorModel {
 	vis := m.valueViewerHeight()
 	if m.valueCursor < m.valueOffset {
@@ -476,6 +492,8 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 		},
 		RGIndex:         m.rgIndex,
 		ColumnPath:      m.detail.Path,
+		PrevColumn:      m.prevColumnName(),
+		NextColumn:      m.nextColumnName(),
 		ColumnType:      m.detail.Type,
 		Encoding:        m.detail.Encoding,
 		Compression:     m.detail.Compression,

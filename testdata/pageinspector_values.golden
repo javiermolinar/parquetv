@@ -1,16 +1,16 @@
   parquetv ─── small.parquet                                                                                            
   RootServiceName  STRING  PLAIN, RLE_DICTIONARY  115 B  17 values                                                      
 Row Group 0                           │ Page 0 values  (17 total)                                                       
-└ RootServiceName                     │       #  value                  hex                                             
-                                      │ ──────────────────────────────────────────────────────────────────────────────  
-Pages                                 │       0  pageserver             70 61 67 65 73 65 72 76 65 72                   
-▸ Page 0                              │       1  pageserver             70 61 67 65 73 65 72 76 65 72                   
-    rows: 17                          │       2  pageserver             70 61 67 65 73 65 72 76 65 72                   
-    min: pageserver                   │       3  pageserver             70 61 67 65 73 65 72 76 65 72                   
-    max: pageserver                   │       4  pageserver             70 61 67 65 73 65 72 76 65 72                   
-    size: 82 B                        │       5  pageserver             70 61 67 65 73 65 72 76 65 72                   
-                                      │       6  pageserver             70 61 67 65 73 65 72 76 65 72                   
-                                      │       7  pageserver             70 61 67 65 73 65 72 76 65 72                   
+DurationNano                          │       #  value                  hex                                             
+[RootServiceName]                     │ ──────────────────────────────────────────────────────────────────────────────  
+RootSpanName                          │       0  pageserver             70 61 67 65 73 65 72 76 65 72                   
+                                      │       1  pageserver             70 61 67 65 73 65 72 76 65 72                   
+Pages                                 │       2  pageserver             70 61 67 65 73 65 72 76 65 72                   
+▸ Page 0                              │       3  pageserver             70 61 67 65 73 65 72 76 65 72                   
+    rows: 17                          │       4  pageserver             70 61 67 65 73 65 72 76 65 72                   
+    min: pageserver                   │       5  pageserver             70 61 67 65 73 65 72 76 65 72                   
+    max: pageserver                   │       6  pageserver             70 61 67 65 73 65 72 76 65 72                   
+    size: 82 B                        │       7  pageserver             70 61 67 65 73 65 72 76 65 72                   
                                       │       8  pageserver             70 61 67 65 73 65 72 76 65 72                   
                                       │       9  pageserver             70 61 67 65 73 65 72 76 65 72                   
                                       │      10  pageserver             70 61 67 65 73 65 72 76 65 72                   

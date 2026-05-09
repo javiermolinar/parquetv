@@ -109,6 +109,8 @@ type PageInspectorVM struct {
 	BottomBar  BottomBarData
 	RGIndex    int
 	ColumnPath string
+	PrevColumn string // empty if at first column
+	NextColumn string // empty if at last column
 	ColumnType string
 	Encoding   string
 	Compression string

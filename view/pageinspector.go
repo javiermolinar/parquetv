@@ -68,13 +68,22 @@ func pageEntryLines(page ui.PageSummaryVM) int {
 func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	var items []string
 
-	// Hierarchy context.
-	items = append(items, accentText.Render(fmt.Sprintf("Row Group %d", vm.RGIndex)))
-	items = append(items, accentText.Render(fmt.Sprintf("└ %s", truncate(vm.ColumnPath, width-4))))
+	// Hierarchy context + column chain.
+	items = append(items, dimText.Render(fmt.Sprintf("Row Group %d", vm.RGIndex)))
+
+	// Column navigation: prev ‹ [current] › next
+	if vm.PrevColumn != "" {
+		items = append(items, dimText.Render(truncate(vm.PrevColumn, width-2))+" ")
+	}
+	items = append(items, accentText.Render(fmt.Sprintf("[%s]", truncate(vm.ColumnPath, width-4))))
+	if vm.NextColumn != "" {
+		items = append(items, dimText.Render(truncate(vm.NextColumn, width-2)))
+	}
+
 	items = append(items, "")
 	items = append(items, headerText.Render("Pages"))
 
-	usedLines := 4 // RG + column + blank + "Pages" header
+	usedLines := len(items)
 
 	for i, page := range vm.Pages {
 		// Skip pages before the scroll offset.
@@ -119,14 +128,8 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	}
 
 	// Scroll indicator if more pages below.
-	lastVisible := vm.PageOffset
-	for i := vm.PageOffset; i < len(vm.Pages); i++ {
-		lastVisible = i
-		// Approximate: recount using the same logic.
-	}
-	// Find actual last rendered page.
 	rendered := 0
-	testLines := 4
+	testLines := usedLines
 	for i := vm.PageOffset; i < len(vm.Pages); i++ {
 		el := pageEntryLines(vm.Pages[i])
 		if testLines+el > height {
@@ -135,7 +138,7 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 		testLines += el
 		rendered++
 	}
-	lastVisible = vm.PageOffset + rendered - 1
+	lastVisible := vm.PageOffset + rendered - 1
 	if lastVisible < len(vm.Pages)-1 {
 		remaining := len(vm.Pages) - lastVisible - 1
 		items = append(items, dimText.Render(fmt.Sprintf("  ▼ %d more pages", remaining)))
