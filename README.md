@@ -2,8 +2,6 @@
 
 Interactive terminal explorer for Parquet files. See both the logical data (rows) and the physical storage (columns, pages, encodings) linked together.
 
-Built for understanding how columnar storage actually works — not just reading the data, but seeing *why* dictionary encoding saves space, *where* page boundaries fall, and *what* predicate pushdown actually skips.
-
 ## Screenshots
 
 ### File overview
@@ -56,16 +54,6 @@ Press `d` on a dict-encoded column to see all unique values sorted by frequency 
 go install github.com/javiermolinar/parquetv@latest
 ```
 
-Or build from source:
-
-```bash
-git clone https://github.com/javiermolinar/parquetv.git
-cd parquetv
-go build -o parquetv .
-```
-
-Requires Go 1.25+.
-
 ## Usage
 
 ```bash
@@ -113,39 +101,6 @@ Opens the file and shows the file overview. Press `enter` to drill into a row gr
 | `d` | Dictionary viewer |
 | `f` | Simulate predicate pushdown |
 | `esc` | Back (values → pages → grid) |
-
-## Architecture
-
-```
-view/    → Pure rendering functions. Takes ViewModels, returns strings. All lipgloss here.
-model/   → BubbleTea models. State, Update(), builds ViewModels.
-ui/      → ViewModel structs. The contract between model and view.
-engine/  → Parquet reading. No TUI imports. Testable without a terminal.
-```
-
-Import graph: `model → ui ← view`, `model → engine`, `engine → nothing`.
-
-Views are pure functions — same input always produces same output. Golden file tests call the view directly with test ViewModels.
-
-## Development
-
-```bash
-make test            # run all tests
-make dev             # file-watching test loop (requires entr)
-make run             # open testdata/small.parquet
-make live            # file-watching run loop
-
-# regenerate golden files after UI changes
-go test ./view/ -update
-```
-
-Golden files in `testdata/` serve as tests, documentation, and regression guards. Reviewers see exactly what the UI looks like as text diffs.
-
-## Dependencies
-
-- [parquet-go](https://github.com/parquet-go/parquet-go) — low-level Parquet reading (same library Grafana Tempo uses)
-- [bubbletea](https://github.com/charmbracelet/bubbletea) — terminal UI framework
-- [lipgloss](https://github.com/charmbracelet/lipgloss) — terminal styling and layout
 
 ## License
 
