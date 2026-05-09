@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/parquet-go/parquet-go"
@@ -160,6 +161,118 @@ func FormatValue(v parquet.Value) string {
 	default:
 		return v.String()
 	}
+}
+
+// CellValue holds raw data for a single cell, used for the inspect panel.
+type CellValue struct {
+	Formatted string // full formatted value (not truncated)
+	RawBytes  []byte // raw bytes of the first value
+	IsNull    bool
+	RepCount  int // total values for this column in this row (>1 for repeated)
+}
+
+// ReadCellRaw reads the raw value for a specific row and column.
+// Used for the always-visible inspect panel.
+func (r *RowGroupReader) ReadCellRaw(row int64, col int) (CellValue, error) {
+	rows := r.rg.Rows()
+	defer rows.Close()
+
+	if err := rows.SeekToRow(row); err != nil {
+		return CellValue{}, fmt.Errorf("seek to row %d: %w", row, err)
+	}
+
+	buf := make([]parquet.Row, 1)
+	n, err := rows.ReadRows(buf)
+	if n == 0 {
+		if err != nil {
+			return CellValue{}, err
+		}
+		return CellValue{}, fmt.Errorf("no row at index %d", row)
+	}
+
+	var cv CellValue
+	first := true
+	for _, v := range buf[0] {
+		if v.Column() != col {
+			continue
+		}
+		cv.RepCount++
+		if first {
+			cv.IsNull = v.IsNull()
+			if !v.IsNull() {
+				cv.Formatted = FormatValue(v)
+				cv.RawBytes = valueRawBytes(v)
+			} else {
+				cv.Formatted = "null"
+			}
+			first = false
+		}
+	}
+
+	if cv.RepCount == 0 {
+		cv.IsNull = true
+		cv.Formatted = "null"
+	} else if cv.RepCount > 1 {
+		cv.Formatted = fmt.Sprintf("%s [+%d]", cv.Formatted, cv.RepCount-1)
+	}
+
+	return cv, nil
+}
+
+// valueRawBytes extracts raw bytes from a parquet value for hex display.
+func valueRawBytes(v parquet.Value) []byte {
+	switch v.Kind() {
+	case parquet.ByteArray, parquet.FixedLenByteArray:
+		b := v.ByteArray()
+		out := make([]byte, len(b))
+		copy(out, b)
+		return out
+	case parquet.Int32:
+		n := v.Int32()
+		return []byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)}
+	case parquet.Int64:
+		n := v.Int64()
+		return []byte{
+			byte(n >> 56), byte(n >> 48), byte(n >> 40), byte(n >> 32),
+			byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n),
+		}
+	case parquet.Float:
+		bits := math.Float32bits(v.Float())
+		return []byte{byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits)}
+	case parquet.Double:
+		bits := math.Float64bits(v.Double())
+		return []byte{
+			byte(bits >> 56), byte(bits >> 48), byte(bits >> 40), byte(bits >> 32),
+			byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits),
+		}
+	case parquet.Boolean:
+		if v.Boolean() {
+			return []byte{0x01}
+		}
+		return []byte{0x00}
+	default:
+		return nil
+	}
+}
+
+// FormatHexDump formats bytes as a spaced hex string: "03 29 be fd...".
+func FormatHexDump(b []byte, maxBytes int) string {
+	if len(b) == 0 {
+		return ""
+	}
+	truncated := len(b) > maxBytes
+	if truncated {
+		b = b[:maxBytes]
+	}
+	parts := make([]string, len(b))
+	for i, c := range b {
+		parts[i] = fmt.Sprintf("%02x", c)
+	}
+	s := strings.Join(parts, " ")
+	if truncated {
+		s += "..."
+	}
+	return s
 }
 
 func formatHex(b []byte) string {

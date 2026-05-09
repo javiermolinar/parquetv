@@ -38,7 +38,7 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 
 	// Stats bar.
 	statsSep := dimText.Render(strings.Repeat("─", width))
-	statsBar := renderColumnStatsBar(vm.Stats, width)
+	inspectBar := renderInspectPanel(vm.Inspect, vm.Stats, width)
 
 	// Assemble content: header + sep + data rows.
 	var contentParts []string
@@ -46,7 +46,7 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 	contentParts = append(contentParts, dataLines...)
 
 	// Pad to fill available height.
-	contentHeight := height - 2 - 1 - 1 - 2 // top(2) + statsSep+stats(2) + bottom(1)
+	contentHeight := height - 2 - 1 - 1 - 3 // top(2) + statsSep+inspect(3) + bottom(1)
 	for len(contentParts) < contentHeight {
 		contentParts = append(contentParts, "")
 	}
@@ -62,7 +62,7 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 		topBar,
 		content,
 		statsSep,
-		statsBar,
+		inspectBar,
 		bottomBar,
 	)
 }
@@ -165,24 +165,74 @@ func renderPageBoundaryLine(colWidths []int) string {
 	return pageBoundaryStyle.Render(truncate(repeated, totalWidth))
 }
 
-// renderColumnStatsBar renders the stats bar for the selected column.
-func renderColumnStatsBar(stats ui.ColumnStatsVM, width int) string {
+// renderInspectPanel renders the combined cell inspect + column stats area (3 lines).
+func renderInspectPanel(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width int) string {
 	if stats.Path == "" {
-		return ""
+		return strings.Repeat("\n", 2)
 	}
 
-	path := statsPathStyle.Render(stats.Path)
+	// Two-column layout: left = cell value, right = column stats.
+	rightWidth := 45
+	leftWidth := width - rightWidth - 3 // 3 for " │ " divider
+	if leftWidth < 30 {
+		leftWidth = width - 5
+		rightWidth = 0
+	}
 
-	details := fmt.Sprintf("type: %s  size: %s  values: %s  pages: %d  per-row: %.1f",
-		stats.Type,
-		FormatBytes(stats.TotalBytes),
-		FormatNumber(stats.NumValues),
-		stats.NumPages,
-		stats.ValuesPerRow,
+	divider := dimText.Render(" │ ")
+
+	// Line 1: path (row N) │ type + size
+	headerLeft := statsPathStyle.Render(
+		fmt.Sprintf("%s (row %d)", inspect.ColumnPath, inspect.RowIndex),
 	)
 
-	return lipgloss.JoinVertical(lipgloss.Left,
-		path,
-		statsDetailStyle.Render(details),
+	// Line 2: full value │ values + pages + per-row
+	valDisplay := inspect.Value
+	if valDisplay == "" {
+		valDisplay = "null"
+	}
+	valueLeft := normalText.Render(truncate(valDisplay, leftWidth-1))
+
+	// Line 3: hex dump │ byte count
+	hexLeft := dimText.Render(truncate(inspect.HexDump, leftWidth-1))
+
+	if rightWidth == 0 {
+		// Narrow terminal: no right column.
+		return lipgloss.JoinVertical(lipgloss.Left, headerLeft, valueLeft, hexLeft)
+	}
+
+	statsLine1 := statsDetailStyle.Render(
+		fmt.Sprintf("type: %s  size: %s", stats.Type, FormatBytes(stats.TotalBytes)),
 	)
+	statsLine2 := statsDetailStyle.Render(
+		fmt.Sprintf("values: %s  pages: %d  per-row: %.1f",
+			FormatNumber(stats.NumValues), stats.NumPages, stats.ValuesPerRow),
+	)
+
+	bytesInfo := ""
+	if inspect.ByteLen > 0 {
+		bytesInfo = fmt.Sprintf("%d bytes", inspect.ByteLen)
+	}
+	if inspect.RepCount > 1 {
+		bytesInfo += fmt.Sprintf("  (%d values)", inspect.RepCount)
+	}
+	statsLine3 := statsDetailStyle.Render(bytesInfo)
+
+	line1 := lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(leftWidth).Render(headerLeft),
+		divider,
+		statsLine1,
+	)
+	line2 := lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(leftWidth).Render(valueLeft),
+		divider,
+		statsLine2,
+	)
+	line3 := lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(leftWidth).Render(hexLeft),
+		divider,
+		statsLine3,
+	)
+
+	return lipgloss.JoinVertical(lipgloss.Left, line1, line2, line3)
 }

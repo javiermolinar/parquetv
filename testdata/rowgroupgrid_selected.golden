@@ -23,8 +23,8 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
-                                                                                                                        
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TraceIDText                                                                                                             
-type: STRING  size: 751 B  values: 17  pages: 1  per-row: 1.0                                                           
+TraceIDText (row 3)                                                      │ type: STRING  size: 751 B                    
+26182811fabf66823e1e9fec9d88973f                                         │ values: 17  pages: 1  per-row: 1.0           
+32 36 31 38 32 38 31 31 66 61 62 66 36 36 38 32 33 65 31 65 39 66 65 ..  │ 32 bytes                                     
   small.parquet › RG 0                           ↑↓ rows  ◂▸ cols  enter pages  f filter  r expand  esc back            

@@ -23,8 +23,8 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
-                                                                                                                        
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-RootServiceName                                                                                                         
-type: STRING  size: 82 B  values: 17  pages: 1  per-row: 1.0                                                            
+RootServiceName (row 0)                                                  │ type: STRING  size: 82 B                     
+pageserver                                                               │ values: 17  pages: 1  per-row: 1.0           
+70 61 67 65 73 65 72 76 65 72                                            │ 10 bytes                                     
   small.parquet › RG 0                           ↑↓ rows  ◂▸ cols  enter pages  f filter  r expand  esc back            

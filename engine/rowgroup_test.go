@@ -127,6 +127,60 @@ func TestPageBoundaries(t *testing.T) {
 	t.Logf("col 0 page boundaries: %v", bounds)
 }
 
+func TestReadCellRaw(t *testing.T) {
+	f, err := engine.Open("../testdata/small.parquet")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	defer f.Close()
+
+	reader, err := f.NewRowGroupReader(0)
+	if err != nil {
+		t.Fatalf("NewRowGroupReader: %v", err)
+	}
+
+	// TraceIDText (col 1) — string column.
+	cv, err := reader.ReadCellRaw(0, 1)
+	if err != nil {
+		t.Fatalf("ReadCellRaw: %v", err)
+	}
+	if cv.IsNull {
+		t.Error("TraceIDText should not be null")
+	}
+	if cv.Formatted == "" {
+		t.Error("TraceIDText formatted is empty")
+	}
+	if len(cv.RawBytes) == 0 {
+		t.Error("TraceIDText raw bytes is empty")
+	}
+	if cv.RepCount != 1 {
+		t.Errorf("TraceIDText RepCount = %d, want 1", cv.RepCount)
+	}
+	t.Logf("TraceIDText: value=%q bytes=%d hex=%s", cv.Formatted, len(cv.RawBytes), engine.FormatHexDump(cv.RawBytes, 16))
+
+	// DurationNano (col 4) — int64 column.
+	cv, err = reader.ReadCellRaw(0, 4)
+	if err != nil {
+		t.Fatalf("ReadCellRaw DurationNano: %v", err)
+	}
+	if cv.Formatted != "270748" {
+		t.Errorf("DurationNano = %q, want 270748", cv.Formatted)
+	}
+	if len(cv.RawBytes) != 8 {
+		t.Errorf("DurationNano bytes = %d, want 8", len(cv.RawBytes))
+	}
+
+	// Span-level column (col 47 = rs.ss.Spans.SpanID) — repeated.
+	cv, err = reader.ReadCellRaw(0, 47)
+	if err != nil {
+		t.Fatalf("ReadCellRaw SpanID: %v", err)
+	}
+	if cv.RepCount <= 1 {
+		t.Errorf("SpanID RepCount = %d, expected > 1 (span-level)", cv.RepCount)
+	}
+	t.Logf("SpanID: rep=%d value=%q", cv.RepCount, cv.Formatted)
+}
+
 func TestNewRowGroupReaderOutOfRange(t *testing.T) {
 	f, err := engine.Open("../testdata/small.parquet")
 	if err != nil {

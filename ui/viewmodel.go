@@ -72,6 +72,7 @@ type RowGroupGridVM struct {
 	TotalCols   int
 	RowOffset   int64 // absolute row index of first visible row
 	Stats       ColumnStatsVM
+	Inspect     CellInspectVM
 	PageBounds  []int // viewport-relative row indices where a page boundary appears BEFORE the row
 	Width       int
 	Height      int
@@ -91,4 +92,14 @@ type ColumnStatsVM struct {
 	NumValues    int64
 	NumPages     int
 	ValuesPerRow float64
+}
+
+// CellInspectVM holds data for the always-visible cell inspect panel.
+type CellInspectVM struct {
+	ColumnPath string
+	RowIndex   int64
+	Value      string // full untruncated value
+	HexDump    string // spaced hex: "03 29 be fd..."
+	ByteLen    int
+	RepCount   int // >1 for repeated columns
 }

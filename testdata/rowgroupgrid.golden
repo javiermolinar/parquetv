@@ -23,8 +23,8 @@
                                                                                                                         
                                                                                                                         
                                                                                                                         
-                                                                                                                        
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-TraceID                                                                                                                 
-type: BYTE_ARRAY  size: 408 B  values: 17  pages: 1  per-row: 1.0                                                       
+TraceID (row 0)                                                          │ type: BYTE_ARRAY  size: 408 B                
+0329befd83f18e09add8657139735171                                         │ values: 17  pages: 1  per-row: 1.0           
+03 29 be fd 83 f1 8e 09 ad d8 65 71 39 73 51 71                          │ 16 bytes                                     
   small.parquet › RG 0                           ↑↓ rows  ◂▸ cols  enter pages  f filter  r expand  esc back            

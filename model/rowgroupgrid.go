@@ -14,7 +14,7 @@ const (
 	rowNumColWidth = 7  // width for the "Row" number column
 	minColWidth    = 15 // minimum data column width
 	maxColWidth    = 25 // maximum data column width
-	gridChromeRows = 8  // top(2) + header(1) + sep(1) + statsSep(1) + stats(2) + bottom(1)
+	gridChromeRows = 9  // top(2) + header(1) + sep(1) + statsSep(1) + inspect(3) + bottom(1)
 )
 
 // RowGroupGridModel handles the row group grid screen.
@@ -308,6 +308,20 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 		}
 	}
 
+	// Cell inspect for selected cell.
+	var inspect ui.CellInspectVM
+	cv, cvErr := m.reader.ReadCellRaw(m.cursorRow, m.cursorCol)
+	if cvErr == nil {
+		inspect = ui.CellInspectVM{
+			ColumnPath: allHeaders[m.cursorCol].Path,
+			RowIndex:   m.cursorRow,
+			Value:      cv.Formatted,
+			HexDump:    engine.FormatHexDump(cv.RawBytes, 32),
+			ByteLen:    len(cv.RawBytes),
+			RepCount:   cv.RepCount,
+		}
+	}
+
 	// Top bar context for Level 2.
 	context := fmt.Sprintf("Row Group %d  %s rows  %s",
 		m.rgIndex,
@@ -339,6 +353,7 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 		TotalCols:   m.totalCols,
 		RowOffset:   m.rowOffset,
 		Stats:       stats,
+		Inspect:     inspect,
 		PageBounds:  pageBounds,
 		Width:       m.width,
 		Height:      m.height,
