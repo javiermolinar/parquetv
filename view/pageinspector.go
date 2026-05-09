@@ -99,12 +99,19 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 
 		isSelected := page.Index == vm.SelectedPage
 
-		// Page header line.
+		// Page header line with optional pushdown badge.
 		name := fmt.Sprintf("Page %d", page.Index)
+		var badge string
+		switch page.Pushdown {
+		case "READ":
+			badge = " " + pushdownReadStyle.Render("READ")
+		case "SKIP":
+			badge = " " + pushdownSkipStyle.Render("SKIP")
+		}
 		if isSelected {
-			name = accentText.Render("▸ ") + selectedRow.Render(name)
+			name = accentText.Render("▸ ") + selectedRow.Render(name) + badge
 		} else {
-			name = "  " + normalText.Render(name)
+			name = "  " + normalText.Render(name) + badge
 		}
 		items = append(items, name)
 		usedLines++

@@ -141,6 +141,7 @@ type PageSummaryVM struct {
 	MinValue       string
 	MaxValue       string
 	CompressedSize int64
+	Pushdown       string // "READ", "SKIP", or "" (no annotation)
 }
 
 // PageValueVM is one value in the page value viewer.

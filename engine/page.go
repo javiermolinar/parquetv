@@ -16,6 +16,8 @@ type PageInfo struct {
 	FirstRowIndex  int64
 	MinValue       string // formatted display string
 	MaxValue       string // formatted display string
+	MinRaw         []byte // raw bytes for comparison
+	MaxRaw         []byte // raw bytes for comparison
 	CompressedSize int64
 }
 
@@ -91,8 +93,12 @@ func (r *RowGroupReader) ReadColumnChunkDetail(colIndex int) (ColumnChunkDetail,
 
 			// Min/max from column index.
 			if ciErr == nil && i < ci.NumPages() && !ci.NullPage(i) {
-				pi.MinValue = FormatValue(ci.MinValue(i))
-				pi.MaxValue = FormatValue(ci.MaxValue(i))
+				minV := ci.MinValue(i)
+				maxV := ci.MaxValue(i)
+				pi.MinValue = FormatValue(minV)
+				pi.MaxValue = FormatValue(maxV)
+				pi.MinRaw = valueRawBytes(minV)
+				pi.MaxRaw = valueRawBytes(maxV)
 			}
 
 			detail.Pages[i] = pi
@@ -106,6 +112,7 @@ func (r *RowGroupReader) ReadColumnChunkDetail(colIndex int) (ColumnChunkDetail,
 type PageValueDetail struct {
 	Formatted string // human-readable value
 	HexDump   string // spaced hex: "03 29 be fd..."
+	RawBytes  []byte // raw bytes for comparison
 	ByteLen   int
 }
 
@@ -169,6 +176,7 @@ func (r *RowGroupReader) ReadPageValues(colIndex, pageIndex int, offset, limit i
 			result = append(result, PageValueDetail{
 				Formatted: FormatValue(buf[i]),
 				HexDump:   FormatHexDump(raw, 16),
+				RawBytes:  raw,
 				ByteLen:   len(raw),
 			})
 		}
@@ -238,4 +246,29 @@ func formatCompression(c format.CompressionCodec) string {
 	default:
 		return c.String()
 	}
+}
+
+// CompareRawBytes compares two raw byte slices for ordering.
+// Works correctly for big-endian integers and lexicographic byte arrays.
+// Returns -1, 0, or 1.
+func CompareRawBytes(a, b []byte) int {
+	minLen := len(a)
+	if len(b) < minLen {
+		minLen = len(b)
+	}
+	for i := 0; i < minLen; i++ {
+		if a[i] < b[i] {
+			return -1
+		}
+		if a[i] > b[i] {
+			return 1
+		}
+	}
+	if len(a) < len(b) {
+		return -1
+	}
+	if len(a) > len(b) {
+		return 1
+	}
+	return 0
 }

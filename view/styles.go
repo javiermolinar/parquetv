@@ -161,6 +161,17 @@ var (
 				Background(colorSelected)
 )
 
+// Pushdown annotation styles.
+var (
+	pushdownReadStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#22C55E")).
+				Bold(true)
+
+	pushdownSkipStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#EF4444")).
+				Bold(true)
+)
+
 // Page inspector styles (Level 3).
 var (
 	pageValueNumStyle = lipgloss.NewStyle().

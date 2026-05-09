@@ -453,7 +453,16 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 		shortcuts = []string{"↑↓ pages", "◂▸ column", "enter values", "d dict", "f simulate", "esc back"}
 	}
 
-	// Build page summaries.
+	// Get cursor value raw bytes for pushdown annotation.
+	var cursorRaw []byte
+	if m.viewingValues {
+		relIdx := m.valueCursor - m.valueOffset
+		if relIdx >= 0 && relIdx < len(m.values) {
+			cursorRaw = m.values[relIdx].RawBytes
+		}
+	}
+
+	// Build page summaries with pushdown annotations.
 	pages := make([]ui.PageSummaryVM, len(m.detail.Pages))
 	for i, p := range m.detail.Pages {
 		pages[i] = ui.PageSummaryVM{
@@ -463,6 +472,16 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 			MinValue:       p.MinValue,
 			MaxValue:       p.MaxValue,
 			CompressedSize: p.CompressedSize,
+		}
+		// Live pushdown: if cursor is on a value, check if this page
+		// could contain that value based on min/max.
+		if cursorRaw != nil && p.MinRaw != nil && p.MaxRaw != nil {
+			if engine.CompareRawBytes(cursorRaw, p.MinRaw) >= 0 &&
+				engine.CompareRawBytes(cursorRaw, p.MaxRaw) <= 0 {
+				pages[i].Pushdown = "READ"
+			} else {
+				pages[i].Pushdown = "SKIP"
+			}
 		}
 	}
 
