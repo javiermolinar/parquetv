@@ -30,15 +30,16 @@ func RenderDictionary(vm ui.DictionaryVM) string {
 
 	// Side by side: table (left) + treemap (right).
 	tableWidth := width*2/5 - 1
-	mapWidth := width - tableWidth - 1
+	mapWidth := width - tableWidth - 3 // 3 for gap
 
 	tableContent := renderDictTable(vm, tableWidth, contentHeight)
 	mapContent := renderTreemap(vm.AllEntries, mapWidth, contentHeight)
 
 	tablePanel := lipgloss.NewStyle().Width(tableWidth).Height(contentHeight).Render(tableContent)
+	gap := lipgloss.NewStyle().Width(2).Height(contentHeight).Render("")
 	mapPanel := lipgloss.NewStyle().Width(mapWidth).Height(contentHeight).Render(mapContent)
 
-	content := lipgloss.JoinHorizontal(lipgloss.Top, tablePanel, mapPanel)
+	content := lipgloss.JoinHorizontal(lipgloss.Top, tablePanel, gap, mapPanel)
 
 	return lipgloss.JoinVertical(lipgloss.Left, topBar, content, bottomBar)
 }
@@ -133,15 +134,16 @@ func renderTreemap(entries []ui.DictEntryVM, width, height int) string {
 	}
 
 	// Render grid to styled string.
+	// Muted palette matching the dark UI aesthetic.
 	palette := []lipgloss.Color{
-		lipgloss.Color("#22C55E"), // green
-		lipgloss.Color("#3B82F6"), // blue
-		lipgloss.Color("#F59E0B"), // amber
-		lipgloss.Color("#EF4444"), // red
-		lipgloss.Color("#8B5CF6"), // purple
-		lipgloss.Color("#06B6D4"), // cyan
-		lipgloss.Color("#F97316"), // orange
-		lipgloss.Color("#EC4899"), // pink
+		lipgloss.Color("#2D6A4F"), // forest green (accent family)
+		lipgloss.Color("#3A5A7C"), // steel blue
+		lipgloss.Color("#6B5B47"), // warm brown
+		lipgloss.Color("#5C5470"), // muted purple
+		lipgloss.Color("#4A6B5A"), // sage
+		lipgloss.Color("#6B4A4A"), // dusty red
+		lipgloss.Color("#4A5A6B"), // slate
+		lipgloss.Color("#5A6B4A"), // olive
 	}
 
 	var rows []string
@@ -160,7 +162,7 @@ func renderTreemap(entries []ui.DictEntryVM, width, height int) string {
 
 			if ci >= 0 && ci < len(palette) {
 				style := lipgloss.NewStyle().
-					Foreground(lipgloss.Color("#000000")).
+					Foreground(lipgloss.Color("#D4D4D4")).
 					Background(palette[ci]).
 					Width(runW)
 				parts = append(parts, style.Render(text))
