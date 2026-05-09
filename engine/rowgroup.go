@@ -100,7 +100,7 @@ func (r *RowGroupReader) ReadRows(offset, limit int64) ([][]string, error) {
 
 		for j := range values {
 			if counts[j] > 1 {
-				values[j] = fmt.Sprintf("%s [+%d]", values[j], counts[j]-1)
+				values[j] = fmt.Sprintf("×%d %s", counts[j], values[j])
 			} else if counts[j] == 0 {
 				values[j] = ""
 			}
@@ -217,7 +217,7 @@ func (r *RowGroupReader) ReadCellRaw(row int64, col int) (CellValue, error) {
 		cv.IsNull = true
 		cv.Formatted = "null"
 	} else if cv.RepCount > 1 {
-		cv.Formatted = fmt.Sprintf("%s [+%d]", cv.Formatted, cv.RepCount-1)
+		cv.Formatted = fmt.Sprintf("%s ×%d", cv.Formatted, cv.RepCount)
 	}
 
 	return cv, nil
