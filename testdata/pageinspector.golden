@@ -1,30 +1,30 @@
   parquetv ─── small.parquet                                                                                            
   TraceID  BYTE_ARRAY  DELTA_LENGTH  408 B  17 values                                                                   
-[TraceID]                     │TraceIDText            Page 0 values  (17 total)                                         
-BYTE_ARRAY                    │STRING                       #  value                  hex                               
-                              │                       ────────────────────────────────────────────────────────────────  
-▸ Page 0                      │P0 17 751 B                  0  0329befd83f18e09add8.. 03 29 be fd 83 f1 8e 09 ad d8..   
-    rows: 17                  │                             1  033413fa209489ba1fc5.. 03 34 13 fa 20 94 89 ba 1f c5..   
-    min: 0329befd83f18e09add..│                             2  1be12a7bbc715b069f8c.. 1b e1 2a 7b bc 71 5b 06 9f 8c..   
-    max: c774aba8a30ee3e3202..│                             3  26182811fabf66823e1e.. 26 18 28 11 fa bf 66 82 3e 1e..   
-    size: 408 B               │                             4  2f1ec0a9e7d887bd5dad.. 2f 1e c0 a9 e7 d8 87 bd 5d ad..   
-                              │                             5  5ab9ec8129dcf57f980c.. 5a b9 ec 81 29 dc f5 7f 98 0c..   
-                              │                             6  71e853d25f53bbc0f936.. 71 e8 53 d2 5f 53 bb c0 f9 36..   
-                              │                             7  8cf63549eafeeb2bde58.. 8c f6 35 49 ea fe eb 2b de 58..   
-                              │                             8  9726bd07ad311f67fbb0.. 97 26 bd 07 ad 31 1f 67 fb b0..   
-                              │                             9  9895a8b5ee20d33a3cd0.. 98 95 a8 b5 ee 20 d3 3a 3c d0..   
-                              │                            10  9b8872ef7096c9061f5e.. 9b 88 72 ef 70 96 c9 06 1f 5e..   
-                              │                            11  9d4301d87933686eefa8.. 9d 43 01 d8 79 33 68 6e ef a8..   
-                              │                            12  a35ffa9a45e22c9cc971.. a3 5f fa 9a 45 e2 2c 9c c9 71..   
-                              │                            13  a62a385a39b171791fb0.. a6 2a 38 5a 39 b1 71 79 1f b0..   
-                              │                            14  ab6781b44cc247ef71dc.. ab 67 81 b4 4c c2 47 ef 71 dc..   
-                              │                            15  abf0da09d78275babb3c.. ab f0 da 09 d7 82 75 ba bb 3c..   
-                              │                            16  c774aba8a30ee3e32029.. c7 74 ab a8 a3 0e e3 e3 20 29..   
-                              │                                                                                         
-                              │                                                                                         
-                              │                                                                                         
-                              │                                                                                         
-                              │                                                                                         
-                              │                                                                                         
-                              │                                                                                         
+Row Group 0                           │ Page 0 values  (17 total)                                                       
+[TraceID]                             │       #  value                  hex                                             
+TraceIDText                           │ ──────────────────────────────────────────────────────────────────────────────  
+                                      │       0  0329befd83f18e09add8.. 03 29 be fd 83 f1 8e 09 ad d8 65 71 39 73 5..   
+Pages                                 │       1  033413fa209489ba1fc5.. 03 34 13 fa 20 94 89 ba 1f c5 e6 3d 76 38 f..   
+▸ Page 0                              │       2  1be12a7bbc715b069f8c.. 1b e1 2a 7b bc 71 5b 06 9f 8c 0e c4 c8 60 7..   
+    rows: 17                          │       3  26182811fabf66823e1e.. 26 18 28 11 fa bf 66 82 3e 1e 9f ec 9d 88 9..   
+    min: 0329befd83f18e09add86571397..│       4  2f1ec0a9e7d887bd5dad.. 2f 1e c0 a9 e7 d8 87 bd 5d ad fc c1 94 52 b..   
+    max: c774aba8a30ee3e320296a9fb86..│       5  5ab9ec8129dcf57f980c.. 5a b9 ec 81 29 dc f5 7f 98 0c be 34 a1 d7 d..   
+    size: 408 B                       │       6  71e853d25f53bbc0f936.. 71 e8 53 d2 5f 53 bb c0 f9 36 d2 6d 1f c0 6..   
+                                      │       7  8cf63549eafeeb2bde58.. 8c f6 35 49 ea fe eb 2b de 58 44 54 ad 45 1..   
+                                      │       8  9726bd07ad311f67fbb0.. 97 26 bd 07 ad 31 1f 67 fb b0 95 ba b8 a5 6..   
+                                      │       9  9895a8b5ee20d33a3cd0.. 98 95 a8 b5 ee 20 d3 3a 3c d0 26 1c 7b 5d 5..   
+                                      │      10  9b8872ef7096c9061f5e.. 9b 88 72 ef 70 96 c9 06 1f 5e 58 31 90 d5 a..   
+                                      │      11  9d4301d87933686eefa8.. 9d 43 01 d8 79 33 68 6e ef a8 7c 43 86 ac d..   
+                                      │      12  a35ffa9a45e22c9cc971.. a3 5f fa 9a 45 e2 2c 9c c9 71 67 f4 c7 37 a..   
+                                      │      13  a62a385a39b171791fb0.. a6 2a 38 5a 39 b1 71 79 1f b0 0b 63 88 2b e..   
+                                      │      14  ab6781b44cc247ef71dc.. ab 67 81 b4 4c c2 47 ef 71 dc 98 cf 93 23 0..   
+                                      │      15  abf0da09d78275babb3c.. ab f0 da 09 d7 82 75 ba bb 3c 48 1c 59 3b 9..   
+                                      │      16  c774aba8a30ee3e32029.. c7 74 ab a8 a3 0e e3 e3 20 29 6a 9f b8 6e f..   
+                                      │                                                                                 
+                                      │                                                                                 
+                                      │                                                                                 
+                                      │                                                                                 
+                                      │                                                                                 
+                                      │                                                                                 
+                                      │                                                                                 
   small.parquet › RG 0 › TraceID           ↑↓ pages  ◂▸ column  enter values  d dict  f simulate  esc back              
