@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	gridRowNumWidth = 7
-	gridColPadLeft  = 2 // left padding inside each data column
+	gridRowNumWidth   = 7
+	gridColPadLeft    = 2  // left padding inside each data column
+	gridNavPanelWidth = 38 // must match model.navPanelWidth
 )
 
 // RenderRowGroupGrid renders the row group grid screen.
@@ -27,50 +28,92 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 	topBar := RenderTopBar(vm.TopBar, width)
 	bottomBar := RenderBottomBar(vm.BottomBar, width)
 
-	// Header line.
-	headerLine := renderGridHeader(vm.Headers, vm.ColWidths, vm.SelectedCol)
-
-	// Separator.
-	sepLine := renderGridSeparator(vm.ColWidths)
-
-	// Data rows (with page boundary lines interleaved).
-	dataLines := renderGridRows(vm)
-
-	// Stats bar.
-	statsSep := dimText.Render(strings.Repeat("─", width))
-	inspectBar := renderInspectPanel(vm.Inspect, vm.Stats, width)
-
-	// Assemble content: header + sep + data rows.
-	var contentParts []string
-	contentParts = append(contentParts, headerLine, sepLine)
-	contentParts = append(contentParts, dataLines...)
-
 	// Determine inspect panel height.
 	inspectLines := 3
 	if vm.Inspect.Focused {
 		inspectLines = 8
 	}
 
-	// Pad to fill available height.
-	contentHeight := height - 2 - 1 - inspectLines - 1 // top(2) + statsSep+inspect(N) + bottom(1)
-	for len(contentParts) < contentHeight {
-		contentParts = append(contentParts, "")
+	// Two-panel area: nav tree (left) + grid (right).
+	panelHeight := height - 2 - 1 - inspectLines - 1 // top(2) + statsSep(1) + inspect(N) + bottom(1)
+	if panelHeight < 1 {
+		panelHeight = 1
 	}
 
-	// Trim if too tall (page boundary lines might push over).
-	if len(contentParts) > contentHeight {
-		contentParts = contentParts[:contentHeight]
+	navWidth := gridNavPanelWidth
+	navContent := renderGridNavPanel(vm, navWidth, panelHeight)
+	leftPanel := leftPanelStyle.Width(navWidth).Height(panelHeight).Render(navContent)
+
+	gridWidth := width - navWidth - 3
+	headerLine := renderGridHeader(vm.Headers, vm.ColWidths, vm.SelectedCol)
+	sepLine := renderGridSeparator(vm.ColWidths)
+	dataLines := renderGridRows(vm)
+
+	var gridParts []string
+	gridParts = append(gridParts, headerLine, sepLine)
+	gridParts = append(gridParts, dataLines...)
+
+	for len(gridParts) < panelHeight {
+		gridParts = append(gridParts, "")
+	}
+	if len(gridParts) > panelHeight {
+		gridParts = gridParts[:panelHeight]
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, contentParts...)
+	gridContent := lipgloss.JoinVertical(lipgloss.Left, gridParts...)
+	rightPanel := lipgloss.NewStyle().Width(gridWidth).Height(panelHeight).PaddingLeft(1).Render(gridContent)
+
+	middleSection := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+
+	statsSep := dimText.Render(strings.Repeat("─", width))
+	inspectBar := renderInspectPanel(vm.Inspect, vm.Stats, width)
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		topBar,
-		content,
+		middleSection,
 		statsSep,
 		inspectBar,
 		bottomBar,
 	)
+}
+
+// renderGridNavPanel renders the left navigation tree for the grid.
+func renderGridNavPanel(vm ui.RowGroupGridVM, width, height int) string {
+	var items []string
+
+	items = append(items, accentText.Render(fmt.Sprintf("▸ Row Group %d", vm.RGIndex)))
+	items = append(items, dimText.Render(fmt.Sprintf("    %s rows  %s",
+		FormatNumber(vm.TotalRows), FormatBytes(vm.RGBytes))))
+	items = append(items, "")
+	items = append(items, dimText.Render(strings.Repeat("─", width-2)))
+
+	cursorRow := vm.RowOffset + int64(vm.SelectedRow)
+	items = append(items, normalText.Render(fmt.Sprintf("  row %s / %s",
+		FormatNumber(cursorRow), FormatNumber(vm.TotalRows))))
+
+	colName := ""
+	if vm.SelectedCol >= 0 && vm.SelectedCol < len(vm.Headers) {
+		colName = vm.Headers[vm.SelectedCol]
+	}
+	items = append(items, accentText.Render(fmt.Sprintf("  col: [%s]",
+		truncate(colName, width-10))))
+	items = append(items, "")
+
+	if vm.Stats.Path != "" {
+		items = append(items, dimText.Render(fmt.Sprintf("  %s", vm.Stats.Type)))
+		items = append(items, dimText.Render(fmt.Sprintf("  %s  %d pages",
+			FormatBytes(vm.Stats.TotalBytes), vm.Stats.NumPages)))
+		items = append(items, dimText.Render(fmt.Sprintf("  %s values",
+			FormatNumber(vm.Stats.NumValues))))
+		items = append(items, dimText.Render(fmt.Sprintf("  per-row: %.1f",
+			vm.Stats.ValuesPerRow)))
+	}
+
+	for len(items) < height {
+		items = append(items, "")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, items...)
 }
 
 // renderGridHeader renders the column header line.

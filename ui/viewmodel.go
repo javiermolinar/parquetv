@@ -72,6 +72,8 @@ type RowGroupGridVM struct {
 	TotalRows   int64
 	TotalCols   int
 	RowOffset   int64 // absolute row index of first visible row
+	RGIndex     int   // row group index (for nav panel)
+	RGBytes     int64 // row group total bytes (for nav panel)
 	Stats       ColumnStatsVM
 	Inspect     CellInspectVM
 	PageBounds  []int // viewport-relative row indices where a page boundary appears BEFORE the row
@@ -99,6 +101,7 @@ type ColumnStatsVM struct {
 type PageInspectorVM struct {
 	TopBar     TopBarData
 	BottomBar  BottomBarData
+	RGIndex    int
 	ColumnPath string
 	ColumnType string
 	Encoding   string

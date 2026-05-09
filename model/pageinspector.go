@@ -326,6 +326,7 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 			Breadcrumb: breadcrumb,
 			Shortcuts:  shortcuts,
 		},
+		RGIndex:         m.rgIndex,
 		ColumnPath:      m.detail.Path,
 		ColumnType:      m.detail.Type,
 		Encoding:        m.detail.Encoding,

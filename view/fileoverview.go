@@ -27,7 +27,8 @@ func RenderFileOverview(vm ui.FileOverviewVM) string {
 	contentHeight := height - 3
 
 	// Two-panel layout: row groups (left), footer (right).
-	leftWidth := width*2/5 - 2
+	// Use same nav panel width as grid and page inspector.
+	leftWidth := 38
 	rightWidth := width - leftWidth - 3 // border + padding
 
 	left := renderRowGroupList(vm.RowGroups, vm.Selected, leftWidth, contentHeight)

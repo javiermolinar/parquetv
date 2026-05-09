@@ -17,6 +17,8 @@ const (
 	inspectCompactLines  = 3  // bottom panel lines when unfocused
 	inspectFocusedLines  = 8  // bottom panel lines when focused (1 header + 7 values)
 	gridChromeFixed      = 6  // top(2) + header(1) + sep(1) + statsSep(1) + bottom(1)
+	navPanelWidth        = 38 // fixed left navigation panel width (all levels)
+	navPanelOverhead     = 3  // border(1) + padding(2) between nav and content
 )
 
 // RowGroupGridModel handles the row group grid screen.
@@ -109,7 +111,7 @@ func (m RowGroupGridModel) gridHeight() int {
 
 // visibleColCount returns how many columns fit in the current width.
 func (m RowGroupGridModel) visibleColCount() int {
-	avail := m.width - rowNumColWidth
+	avail := m.width - navPanelWidth - navPanelOverhead - rowNumColWidth
 	count := 0
 	used := 0
 	for i := m.colOffset; i < m.totalCols; i++ {
@@ -448,6 +450,8 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 		TotalRows:   m.totalRows,
 		TotalCols:   m.totalCols,
 		RowOffset:   m.rowOffset,
+		RGIndex:     m.rgIndex,
+		RGBytes:     rgInfo.TotalBytes,
 		Stats:       stats,
 		Inspect:     inspect,
 		PageBounds:  pageBounds,

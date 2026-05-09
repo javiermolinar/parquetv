@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	pageListMinWidth  = 35
-	pageListMaxWidth  = 42
+	pageNavPanelWidth = 38 // must match model.navPanelWidth
 	pageValueNumWidth = 7  // width for "#" column in value viewer
 	pageValueColWidth = 24 // width for "value" column
 	pageValueHexWidth = 50 // width for "hex" column
@@ -33,11 +32,8 @@ func RenderPageInspector(vm ui.PageInspectorVM) string {
 	// Chrome takes 3 lines (top=2, bottom=1).
 	contentHeight := height - 3
 
-	// Two-panel layout.
-	leftWidth := pageListMaxWidth
-	if leftWidth > width/2 {
-		leftWidth = pageListMinWidth
-	}
+	// Two-panel layout — same nav panel width as grid.
+	leftWidth := pageNavPanelWidth
 	rightWidth := width - leftWidth - 3 // divider + padding
 
 	left := renderPageList(vm, leftWidth, contentHeight)
@@ -72,10 +68,13 @@ func pageEntryLines(page ui.PageSummaryVM) int {
 func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	var items []string
 
-	items = append(items, headerText.Render("Pages"))
+	// Hierarchy context.
+	items = append(items, accentText.Render(fmt.Sprintf("Row Group %d", vm.RGIndex)))
+	items = append(items, accentText.Render(fmt.Sprintf("└ %s", truncate(vm.ColumnPath, width-4))))
 	items = append(items, "")
+	items = append(items, headerText.Render("Pages"))
 
-	usedLines := 2 // header + blank
+	usedLines := 4 // RG + column + blank + "Pages" header
 
 	for i, page := range vm.Pages {
 		// Skip pages before the scroll offset.
@@ -127,7 +126,7 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	}
 	// Find actual last rendered page.
 	rendered := 0
-	testLines := 2
+	testLines := 4
 	for i := vm.PageOffset; i < len(vm.Pages); i++ {
 		el := pageEntryLines(vm.Pages[i])
 		if testLines+el > height {
