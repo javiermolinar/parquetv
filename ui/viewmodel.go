@@ -98,8 +98,14 @@ type ColumnStatsVM struct {
 type CellInspectVM struct {
 	ColumnPath string
 	RowIndex   int64
-	Value      string // full untruncated value
-	HexDump    string // spaced hex: "03 29 be fd..."
+	Value      string   // first value (compact display)
+	AllValues  []string // all values for repeated columns
+	HexDump    string   // spaced hex: "03 29 be fd..."
 	ByteLen    int
 	RepCount   int // >1 for repeated columns
+
+	// Focus mode (Tab to expand, j/k to scroll).
+	Focused      bool
+	ScrollOffset int
+	VisibleLines int // value lines visible in focused panel
 }

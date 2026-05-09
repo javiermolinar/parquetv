@@ -165,8 +165,9 @@ func FormatValue(v parquet.Value) string {
 
 // CellValue holds raw data for a single cell, used for the inspect panel.
 type CellValue struct {
-	Formatted string // full formatted value (not truncated)
-	RawBytes  []byte // raw bytes of the first value
+	Formatted string   // first value formatted (with [+N] annotation if repeated)
+	AllValues []string // every value for this column in this row
+	RawBytes  []byte   // raw bytes of the first value
 	IsNull    bool
 	RepCount  int // total values for this column in this row (>1 for repeated)
 }
@@ -191,21 +192,24 @@ func (r *RowGroupReader) ReadCellRaw(row int64, col int) (CellValue, error) {
 	}
 
 	var cv CellValue
-	first := true
 	for _, v := range buf[0] {
 		if v.Column() != col {
 			continue
 		}
 		cv.RepCount++
-		if first {
-			cv.IsNull = v.IsNull()
-			if !v.IsNull() {
-				cv.Formatted = FormatValue(v)
-				cv.RawBytes = valueRawBytes(v)
-			} else {
+		if v.IsNull() {
+			cv.AllValues = append(cv.AllValues, "null")
+			if cv.RepCount == 1 {
+				cv.IsNull = true
 				cv.Formatted = "null"
 			}
-			first = false
+		} else {
+			formatted := FormatValue(v)
+			cv.AllValues = append(cv.AllValues, formatted)
+			if cv.RepCount == 1 {
+				cv.Formatted = formatted
+				cv.RawBytes = valueRawBytes(v)
+			}
 		}
 	}
 

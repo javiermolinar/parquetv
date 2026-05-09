@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	rowNumColWidth = 7  // width for the "Row" number column
-	minColWidth    = 15 // minimum data column width
-	maxColWidth    = 25 // maximum data column width
-	gridChromeRows = 9  // top(2) + header(1) + sep(1) + statsSep(1) + inspect(3) + bottom(1)
+	rowNumColWidth       = 7  // width for the "Row" number column
+	minColWidth          = 15 // minimum data column width
+	maxColWidth          = 25 // maximum data column width
+	inspectCompactLines  = 3  // bottom panel lines when unfocused
+	inspectFocusedLines  = 8  // bottom panel lines when focused (1 header + 7 values)
+	gridChromeFixed      = 6  // top(2) + header(1) + sep(1) + statsSep(1) + bottom(1)
 )
 
 // RowGroupGridModel handles the row group grid screen.
@@ -36,6 +38,11 @@ type RowGroupGridModel struct {
 	// Cached row data for current viewport.
 	cachedRows   [][]string
 	cachedOffset int64
+
+	// Inspect panel state.
+	inspectFocused bool
+	inspectOffset  int
+	cursorCellCV   engine.CellValue // cached cell value for inspect
 
 	width  int
 	height int
@@ -83,9 +90,17 @@ func (m *RowGroupGridModel) SetSize(w, h int) {
 	m.height = h
 }
 
+// inspectHeight returns the current inspect panel height.
+func (m RowGroupGridModel) inspectHeight() int {
+	if m.inspectFocused {
+		return inspectFocusedLines
+	}
+	return inspectCompactLines
+}
+
 // gridHeight returns the number of data rows that fit.
 func (m RowGroupGridModel) gridHeight() int {
-	h := m.height - gridChromeRows
+	h := m.height - gridChromeFixed - m.inspectHeight()
 	if h < 1 {
 		h = 1
 	}
@@ -175,6 +190,11 @@ func (m RowGroupGridModel) Init() tea.Cmd { return nil }
 func (m RowGroupGridModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// When inspect panel is focused, only panel keys work.
+		if m.inspectFocused {
+			return m.updateInspectFocused(msg)
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if m.cursorRow > 0 {
@@ -222,6 +242,14 @@ func (m RowGroupGridModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m = m.ensureCursorVisible()
 			m = m.reloadIfNeeded()
+		case "tab":
+			m = m.loadCursorCell()
+			if m.cursorCellCV.RepCount > 1 {
+				m.inspectFocused = true
+				m.inspectOffset = 0
+				m = m.ensureCursorVisible()
+				m = m.reloadIfNeeded()
+			}
 		case "esc":
 			return m, func() tea.Msg { return backToOverviewMsg{} }
 		case "enter":
@@ -233,6 +261,46 @@ func (m RowGroupGridModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+// updateInspectFocused handles keys when the inspect panel is focused.
+func (m RowGroupGridModel) updateInspectFocused(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	valCount := len(m.cursorCellCV.AllValues)
+	visible := inspectFocusedLines - 1 // minus header line
+	maxOffset := valCount - visible
+	if maxOffset < 0 {
+		maxOffset = 0
+	}
+
+	switch msg.String() {
+	case "down", "j":
+		if m.inspectOffset < maxOffset {
+			m.inspectOffset++
+		}
+	case "up", "k":
+		if m.inspectOffset > 0 {
+			m.inspectOffset--
+		}
+	case "g":
+		m.inspectOffset = 0
+	case "G":
+		m.inspectOffset = maxOffset
+	case "esc", "tab":
+		m.inspectFocused = false
+		m.inspectOffset = 0
+		m = m.ensureCursorVisible()
+		m = m.reloadIfNeeded()
+	}
+	return m, nil
+}
+
+// loadCursorCell reads the raw cell value for the current cursor position.
+func (m RowGroupGridModel) loadCursorCell() RowGroupGridModel {
+	cv, err := m.reader.ReadCellRaw(m.cursorRow, m.cursorCol)
+	if err == nil {
+		m.cursorCellCV = cv
+	}
+	return m
 }
 
 func (m RowGroupGridModel) View() string {
@@ -310,15 +378,33 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 
 	// Cell inspect for selected cell.
 	var inspect ui.CellInspectVM
-	cv, cvErr := m.reader.ReadCellRaw(m.cursorRow, m.cursorCol)
-	if cvErr == nil {
+	if m.inspectFocused {
+		// Use cached cell value when focused (already loaded on Tab).
+		cv := m.cursorCellCV
 		inspect = ui.CellInspectVM{
-			ColumnPath: allHeaders[m.cursorCol].Path,
-			RowIndex:   m.cursorRow,
-			Value:      cv.Formatted,
-			HexDump:    engine.FormatHexDump(cv.RawBytes, 32),
-			ByteLen:    len(cv.RawBytes),
-			RepCount:   cv.RepCount,
+			ColumnPath:   allHeaders[m.cursorCol].Path,
+			RowIndex:     m.cursorRow,
+			Value:        cv.Formatted,
+			AllValues:    cv.AllValues,
+			HexDump:      engine.FormatHexDump(cv.RawBytes, 32),
+			ByteLen:      len(cv.RawBytes),
+			RepCount:     cv.RepCount,
+			Focused:      true,
+			ScrollOffset: m.inspectOffset,
+			VisibleLines: inspectFocusedLines - 1,
+		}
+	} else {
+		cv, cvErr := m.reader.ReadCellRaw(m.cursorRow, m.cursorCol)
+		if cvErr == nil {
+			inspect = ui.CellInspectVM{
+				ColumnPath: allHeaders[m.cursorCol].Path,
+				RowIndex:   m.cursorRow,
+				Value:      cv.Formatted,
+				AllValues:  cv.AllValues,
+				HexDump:    engine.FormatHexDump(cv.RawBytes, 32),
+				ByteLen:    len(cv.RawBytes),
+				RepCount:   cv.RepCount,
+			}
 		}
 	}
 
@@ -331,6 +417,13 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 
 	breadcrumb := fmt.Sprintf("%s › RG %d", filepath.Base(info.Path), m.rgIndex)
 
+	shortcuts := []string{"↑↓ rows", "◂▸ cols", "enter pages", "f filter", "r expand", "esc back"}
+	if m.inspectFocused {
+		shortcuts = []string{"↑↓ scroll", "g/G jump", "esc close"}
+	} else if inspect.RepCount > 1 {
+		shortcuts = []string{"↑↓ rows", "◂▸ cols", "Tab expand", "enter pages", "esc back"}
+	}
+
 	return ui.RowGroupGridVM{
 		TopBar: ui.TopBarData{
 			FileName:     filepath.Base(info.Path),
@@ -342,7 +435,7 @@ func (m RowGroupGridModel) BuildViewModel() ui.RowGroupGridVM {
 		},
 		BottomBar: ui.BottomBarData{
 			Breadcrumb: breadcrumb,
-			Shortcuts:  []string{"↑↓ rows", "◂▸ cols", "enter pages", "f filter", "r expand", "esc back"},
+			Shortcuts:  shortcuts,
 		},
 		Headers:     headers,
 		ColWidths:   colWidths,

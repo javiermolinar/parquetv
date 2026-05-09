@@ -45,8 +45,14 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 	contentParts = append(contentParts, headerLine, sepLine)
 	contentParts = append(contentParts, dataLines...)
 
+	// Determine inspect panel height.
+	inspectLines := 3
+	if vm.Inspect.Focused {
+		inspectLines = 8
+	}
+
 	// Pad to fill available height.
-	contentHeight := height - 2 - 1 - 1 - 3 // top(2) + statsSep+inspect(3) + bottom(1)
+	contentHeight := height - 2 - 1 - inspectLines - 1 // top(2) + statsSep+inspect(N) + bottom(1)
 	for len(contentParts) < contentHeight {
 		contentParts = append(contentParts, "")
 	}
@@ -165,15 +171,23 @@ func renderPageBoundaryLine(colWidths []int) string {
 	return pageBoundaryStyle.Render(truncate(repeated, totalWidth))
 }
 
-// renderInspectPanel renders the combined cell inspect + column stats area (3 lines).
+// renderInspectPanel renders the combined cell inspect + column stats area.
+// Compact (3 lines) when unfocused; expanded (8 lines) with scrollable values when focused.
 func renderInspectPanel(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width int) string {
 	if stats.Path == "" {
 		return strings.Repeat("\n", 2)
 	}
 
-	// Two-column layout: left = cell value, right = column stats.
+	if inspect.Focused {
+		return renderInspectFocused(inspect, stats, width)
+	}
+	return renderInspectCompact(inspect, stats, width)
+}
+
+// renderInspectCompact renders the 3-line compact inspect panel.
+func renderInspectCompact(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width int) string {
 	rightWidth := 45
-	leftWidth := width - rightWidth - 3 // 3 for " │ " divider
+	leftWidth := width - rightWidth - 3
 	if leftWidth < 30 {
 		leftWidth = width - 5
 		rightWidth = 0
@@ -181,23 +195,24 @@ func renderInspectPanel(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width 
 
 	divider := dimText.Render(" │ ")
 
-	// Line 1: path (row N) │ type + size
-	headerLeft := statsPathStyle.Render(
-		fmt.Sprintf("%s (row %d)", inspect.ColumnPath, inspect.RowIndex),
-	)
+	// Line 1: path (row N)
+	headerText := fmt.Sprintf("%s (row %d)", inspect.ColumnPath, inspect.RowIndex)
+	if inspect.RepCount > 1 {
+		headerText += fmt.Sprintf("  %d values", inspect.RepCount)
+	}
+	headerLeft := statsPathStyle.Render(headerText)
 
-	// Line 2: full value │ values + pages + per-row
+	// Line 2: full value
 	valDisplay := inspect.Value
 	if valDisplay == "" {
 		valDisplay = "null"
 	}
 	valueLeft := normalText.Render(truncate(valDisplay, leftWidth-1))
 
-	// Line 3: hex dump │ byte count
+	// Line 3: hex dump
 	hexLeft := dimText.Render(truncate(inspect.HexDump, leftWidth-1))
 
 	if rightWidth == 0 {
-		// Narrow terminal: no right column.
 		return lipgloss.JoinVertical(lipgloss.Left, headerLeft, valueLeft, hexLeft)
 	}
 
@@ -214,25 +229,102 @@ func renderInspectPanel(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width 
 		bytesInfo = fmt.Sprintf("%d bytes", inspect.ByteLen)
 	}
 	if inspect.RepCount > 1 {
-		bytesInfo += fmt.Sprintf("  (%d values)", inspect.RepCount)
+		bytesInfo += "  Tab ↹ expand"
 	}
 	statsLine3 := statsDetailStyle.Render(bytesInfo)
 
-	line1 := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Width(leftWidth).Render(headerLeft),
-		divider,
-		statsLine1,
+	joinLine := func(left string, right string) string {
+		return lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.NewStyle().Width(leftWidth).Render(left),
+			divider, right,
+		)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		joinLine(headerLeft, statsLine1),
+		joinLine(valueLeft, statsLine2),
+		joinLine(hexLeft, statsLine3),
 	)
-	line2 := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Width(leftWidth).Render(valueLeft),
-		divider,
-		statsLine2,
-	)
-	line3 := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Width(leftWidth).Render(hexLeft),
-		divider,
-		statsLine3,
+}
+
+// renderInspectFocused renders the expanded inspect panel with a scrollable value list.
+func renderInspectFocused(inspect ui.CellInspectVM, stats ui.ColumnStatsVM, width int) string {
+	rightWidth := 45
+	leftWidth := width - rightWidth - 3
+	if leftWidth < 30 {
+		leftWidth = width - 5
+		rightWidth = 0
+	}
+
+	divider := dimText.Render(" │ ")
+
+	joinLine := func(left string, right string) string {
+		if rightWidth == 0 {
+			return left
+		}
+		return lipgloss.JoinHorizontal(lipgloss.Top,
+			lipgloss.NewStyle().Width(leftWidth).Render(left),
+			divider, right,
+		)
+	}
+
+	// Line 1: header + stats
+	headerText := fmt.Sprintf("%s (row %d)  %d values", inspect.ColumnPath, inspect.RowIndex, inspect.RepCount)
+	headerLeft := statsPathStyle.Render(headerText)
+	statsRight := statsDetailStyle.Render(
+		fmt.Sprintf("type: %s  size: %s  per-row: %.1f",
+			stats.Type, FormatBytes(stats.TotalBytes), stats.ValuesPerRow),
 	)
 
-	return lipgloss.JoinVertical(lipgloss.Left, line1, line2, line3)
+	var lines []string
+	lines = append(lines, joinLine(headerLeft, statsRight))
+
+	// Value lines (scrollable).
+	visible := inspect.VisibleLines
+	if visible < 1 {
+		visible = 7
+	}
+
+	for i := 0; i < visible; i++ {
+		idx := inspect.ScrollOffset + i
+		if idx < len(inspect.AllValues) {
+			num := fmt.Sprintf("%3d  ", idx+1)
+			val := truncate(inspect.AllValues[idx], leftWidth-7)
+			line := accentText.Render(num) + normalText.Render(val)
+			lines = append(lines, joinLine(line, ""))
+		} else {
+			lines = append(lines, joinLine("", ""))
+		}
+	}
+
+	// Show scroll position on the last value line's right side.
+	if rightWidth > 0 && len(lines) > 1 {
+		remaining := len(inspect.AllValues) - inspect.ScrollOffset - visible
+		if remaining < 0 {
+			remaining = 0
+		}
+		scrollHint := ""
+		if remaining > 0 {
+			scrollHint = fmt.Sprintf("▼ %d more", remaining)
+		}
+		if inspect.ScrollOffset > 0 {
+			if scrollHint != "" {
+				scrollHint = fmt.Sprintf("▲ %d above  %s", inspect.ScrollOffset, scrollHint)
+			} else {
+				scrollHint = fmt.Sprintf("▲ %d above", inspect.ScrollOffset)
+			}
+		}
+		// Replace last line to include scroll hint on the right.
+		lastIdx := len(lines) - 1
+		lastLeft := ""
+		idx := inspect.ScrollOffset + visible - 1
+		if idx < len(inspect.AllValues) {
+			num := fmt.Sprintf("%3d  ", idx+1)
+			val := truncate(inspect.AllValues[idx], leftWidth-7)
+			lastLeft = accentText.Render(num) + normalText.Render(val)
+		}
+		lines[lastIdx] = joinLine(lastLeft, dimText.Render(scrollHint))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
