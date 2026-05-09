@@ -119,6 +119,55 @@ var (
 				Bold(true)
 )
 
+// Dictionary view styles.
+var (
+	dictNumStyle = lipgloss.NewStyle().
+			Foreground(colorMuted).
+			Align(lipgloss.Right)
+
+	dictHeaderStyle = lipgloss.NewStyle().
+				Foreground(colorDim).
+				Bold(true).
+				PaddingLeft(2)
+
+	dictValueStyle = lipgloss.NewStyle().
+				Foreground(colorPrimary).
+				PaddingLeft(2)
+
+	dictCountStyle = lipgloss.NewStyle().
+				Foreground(colorDim)
+
+	dictPctStyle = lipgloss.NewStyle().
+			Foreground(colorDim)
+
+	dictBarStyle = lipgloss.NewStyle().
+			Foreground(colorAccent)
+
+	// Cursor row.
+	dictCursorNum = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Align(lipgloss.Right)
+
+	dictCursorValue = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected).
+				Bold(true).
+				PaddingLeft(2)
+
+	dictCursorCount = lipgloss.NewStyle().
+				Foreground(colorPrimary).
+				Background(colorSelected)
+
+	dictCursorPct = lipgloss.NewStyle().
+				Foreground(colorPrimary).
+				Background(colorSelected)
+
+	dictCursorBar = lipgloss.NewStyle().
+				Foreground(colorAccent).
+				Background(colorSelected)
+)
+
 // Page inspector styles (Level 3).
 var (
 	pageValueNumStyle = lipgloss.NewStyle().

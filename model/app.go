@@ -117,8 +117,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (a App) View() string {
 	switch a.level {
 	case 2:
-		vm := a.pageInspector.BuildViewModel()
-		return view.RenderPageInspector(vm)
+		return a.pageInspector.View()
 	case 1:
 		vm := a.grid.BuildViewModel()
 		return view.RenderRowGroupGrid(vm)

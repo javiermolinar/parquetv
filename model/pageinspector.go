@@ -36,6 +36,12 @@ type PageInspectorModel struct {
 	valueOffset   int  // first visible value index
 	viewingValues bool // when true, keys control the value viewer
 
+	// Dictionary overlay state.
+	showingDict  bool
+	dictResult   *engine.DictionaryResult
+	dictCursor   int
+	dictOffset   int
+
 	width  int
 	height int
 }
@@ -96,6 +102,9 @@ func (m PageInspectorModel) Init() tea.Cmd { return nil }
 func (m PageInspectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.showingDict {
+			return m.updateDictView(msg)
+		}
 		if m.viewingValues {
 			return m.updateValueViewer(msg)
 		}
@@ -149,7 +158,16 @@ func (m PageInspectorModel) updatePageList(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m = m.loadPageValues()
 		}
 	case "d":
-		// Stub: dictionary view (Phase 8)
+		if m.dictResult == nil {
+			result, err := m.reader.ReadDictionary(m.colIndex)
+			if err != nil {
+				break // not dict-encoded, ignore
+			}
+			m.dictResult = &result
+		}
+		m.showingDict = true
+		m.dictCursor = 0
+		m.dictOffset = 0
 	case "f":
 		// Stub: predicate simulation (Phase 8)
 	case "esc":
@@ -211,6 +229,77 @@ func (m PageInspectorModel) updateValueViewer(msg tea.KeyMsg) (tea.Model, tea.Cm
 	return m, nil
 }
 
+// updateDictView handles keys when the dictionary overlay is showing.
+func (m PageInspectorModel) updateDictView(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.dictResult == nil {
+		m.showingDict = false
+		return m, nil
+	}
+
+	visHeight := m.dictVisibleLines()
+	maxCursor := len(m.dictResult.Entries) - 1
+	if maxCursor < 0 {
+		maxCursor = 0
+	}
+
+	switch msg.String() {
+	case "down", "j":
+		if m.dictCursor < maxCursor {
+			m.dictCursor++
+			m = m.ensureDictVisible()
+		}
+	case "up", "k":
+		if m.dictCursor > 0 {
+			m.dictCursor--
+			m = m.ensureDictVisible()
+		}
+	case "g":
+		m.dictCursor = 0
+		m = m.ensureDictVisible()
+	case "G":
+		m.dictCursor = maxCursor
+		m = m.ensureDictVisible()
+	case "ctrl+d":
+		m.dictCursor += visHeight / 2
+		if m.dictCursor > maxCursor {
+			m.dictCursor = maxCursor
+		}
+		m = m.ensureDictVisible()
+	case "ctrl+u":
+		m.dictCursor -= visHeight / 2
+		if m.dictCursor < 0 {
+			m.dictCursor = 0
+		}
+		m = m.ensureDictVisible()
+	case "esc":
+		m.showingDict = false
+	}
+	return m, nil
+}
+
+func (m PageInspectorModel) ensureDictVisible() PageInspectorModel {
+	vis := m.dictVisibleLines()
+	if m.dictCursor < m.dictOffset {
+		m.dictOffset = m.dictCursor
+	}
+	if m.dictCursor >= m.dictOffset+vis {
+		m.dictOffset = m.dictCursor - vis + 1
+	}
+	if m.dictOffset < 0 {
+		m.dictOffset = 0
+	}
+	return m
+}
+
+func (m PageInspectorModel) dictVisibleLines() int {
+	// height minus chrome(3) minus header(3: title + colheaders + sep)
+	vis := m.height - 3 - 3
+	if vis < 1 {
+		vis = 1
+	}
+	return vis
+}
+
 func (m PageInspectorModel) ensureValueVisible() PageInspectorModel {
 	vis := m.valueViewerHeight()
 	if m.valueCursor < m.valueOffset {
@@ -259,8 +348,51 @@ func (m PageInspectorModel) loadPageValues() PageInspectorModel {
 }
 
 func (m PageInspectorModel) View() string {
+	if m.showingDict {
+		vm := m.BuildDictionaryVM()
+		return view.RenderDictionary(vm)
+	}
 	vm := m.BuildViewModel()
 	return view.RenderPageInspector(vm)
+}
+
+// BuildDictionaryVM creates the dictionary overlay view model.
+func (m PageInspectorModel) BuildDictionaryVM() ui.DictionaryVM {
+	if m.dictResult == nil {
+		return ui.DictionaryVM{}
+	}
+
+	visible := m.dictVisibleLines()
+	end := m.dictOffset + visible
+	if end > len(m.dictResult.Entries) {
+		end = len(m.dictResult.Entries)
+	}
+
+	entries := make([]ui.DictEntryVM, 0, end-m.dictOffset)
+	for i := m.dictOffset; i < end; i++ {
+		e := m.dictResult.Entries[i]
+		pct := float64(0)
+		if m.dictResult.Total > 0 {
+			pct = float64(e.Count) / float64(m.dictResult.Total) * 100
+		}
+		entries = append(entries, ui.DictEntryVM{
+			Index:   i,
+			Value:   e.Value,
+			Count:   e.Count,
+			Percent: pct,
+		})
+	}
+
+	return ui.DictionaryVM{
+		ColumnPath: m.dictResult.Path,
+		Entries:    entries,
+		Total:      m.dictResult.Total,
+		NumEntries: len(m.dictResult.Entries),
+		Cursor:     m.dictCursor - m.dictOffset,
+		Offset:     m.dictOffset,
+		Width:      m.width,
+		Height:     m.height,
+	}
 }
 
 // BuildViewModel converts model state into a PageInspectorVM.

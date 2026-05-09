@@ -149,6 +149,26 @@ type PageValueVM struct {
 	ByteLen int    // raw byte count
 }
 
+// DictionaryVM is the view model for the dictionary overlay.
+type DictionaryVM struct {
+	ColumnPath string
+	Entries    []DictEntryVM
+	Total      int64 // total values in column
+	NumEntries int   // total dictionary entries
+	Cursor     int   // selected entry within visible window
+	Offset     int   // scroll offset
+	Width      int
+	Height     int
+}
+
+// DictEntryVM is one dictionary entry.
+type DictEntryVM struct {
+	Index   int
+	Value   string
+	Count   int64
+	Percent float64
+}
+
 // CellInspectVM holds data for the always-visible cell inspect panel.
 type CellInspectVM struct {
 	ColumnPath string
