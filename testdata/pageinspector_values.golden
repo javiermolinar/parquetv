@@ -6,7 +6,7 @@ DurationNano                          │       #  value                  hex
 RootSpanName                          │       0  pageserver             70 61 67 65 73 65 72 76 65 72                   
                                       │       1  pageserver             70 61 67 65 73 65 72 76 65 72                   
 Pages                                 │       2  pageserver             70 61 67 65 73 65 72 76 65 72                   
-▸ Page 0 READ                         │       3  pageserver             70 61 67 65 73 65 72 76 65 72                   
+▸ Page 0                              │       3  pageserver             70 61 67 65 73 65 72 76 65 72                   
     rows: 17                          │       4  pageserver             70 61 67 65 73 65 72 76 65 72                   
     min: pageserver                   │       5  pageserver             70 61 67 65 73 65 72 76 65 72                   
     max: pageserver                   │       6  pageserver             70 61 67 65 73 65 72 76 65 72                   
