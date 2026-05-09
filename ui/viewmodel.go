@@ -152,11 +152,12 @@ type PageValueVM struct {
 // DictionaryVM is the view model for the dictionary overlay.
 type DictionaryVM struct {
 	ColumnPath string
-	Entries    []DictEntryVM
-	Total      int64 // total values in column
-	NumEntries int   // total dictionary entries
-	Cursor     int   // selected entry within visible window
-	Offset     int   // scroll offset
+	Entries    []DictEntryVM // visible window of entries
+	AllEntries []DictEntryVM // all entries (for distribution chart)
+	Total      int64         // total values in column
+	NumEntries int           // total dictionary entries
+	Cursor     int           // selected entry within visible window
+	Offset     int           // scroll offset
 	Width      int
 	Height     int
 }

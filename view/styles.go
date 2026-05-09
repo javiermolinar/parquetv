@@ -140,9 +140,6 @@ var (
 	dictPctStyle = lipgloss.NewStyle().
 			Foreground(colorDim)
 
-	dictBarStyle = lipgloss.NewStyle().
-			Foreground(colorAccent)
-
 	// Cursor row.
 	dictCursorNum = lipgloss.NewStyle().
 				Foreground(colorAccent).
@@ -161,10 +158,6 @@ var (
 
 	dictCursorPct = lipgloss.NewStyle().
 				Foreground(colorPrimary).
-				Background(colorSelected)
-
-	dictCursorBar = lipgloss.NewStyle().
-				Foreground(colorAccent).
 				Background(colorSelected)
 )
 

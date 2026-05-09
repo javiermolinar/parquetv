@@ -383,9 +383,25 @@ func (m PageInspectorModel) BuildDictionaryVM() ui.DictionaryVM {
 		})
 	}
 
+	// Build all entries for the distribution chart.
+	allEntries := make([]ui.DictEntryVM, len(m.dictResult.Entries))
+	for i, e := range m.dictResult.Entries {
+		pct := float64(0)
+		if m.dictResult.Total > 0 {
+			pct = float64(e.Count) / float64(m.dictResult.Total) * 100
+		}
+		allEntries[i] = ui.DictEntryVM{
+			Index:   i,
+			Value:   e.Value,
+			Count:   e.Count,
+			Percent: pct,
+		}
+	}
+
 	return ui.DictionaryVM{
 		ColumnPath: m.dictResult.Path,
 		Entries:    entries,
+		AllEntries: allEntries,
 		Total:      m.dictResult.Total,
 		NumEntries: len(m.dictResult.Entries),
 		Cursor:     m.dictCursor - m.dictOffset,
