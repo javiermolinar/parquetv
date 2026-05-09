@@ -24,7 +24,9 @@ type PageInspectorModel struct {
 	rgIndex  int
 	colIndex int
 
-	detail engine.ColumnChunkDetail
+	detail     engine.ColumnChunkDetail
+	prevDetail *engine.ColumnChunkDetail // nil if at first column
+	nextDetail *engine.ColumnChunkDetail // nil if at last column
 
 	selectedPage int
 	pageOffset   int // first visible page in left panel
@@ -61,6 +63,18 @@ func NewPageInspectorModel(file *engine.File, reader *engine.RowGroupReader, rgI
 		detail:   detail,
 		width:    width,
 		height:   height,
+	}
+
+	// Load adjacent column details for the sliding window.
+	if colIndex > 0 {
+		if d, err := reader.ReadColumnChunkDetail(colIndex - 1); err == nil {
+			m.prevDetail = &d
+		}
+	}
+	if colIndex+1 < len(reader.Headers()) {
+		if d, err := reader.ReadColumnChunkDetail(colIndex + 1); err == nil {
+			m.nextDetail = &d
+		}
 	}
 
 	// Load initial page values if pages exist.
@@ -300,20 +314,23 @@ func (m PageInspectorModel) dictVisibleLines() int {
 	return vis
 }
 
-func (m PageInspectorModel) prevColumnName() string {
-	headers := m.reader.Headers()
-	if m.colIndex > 0 && m.colIndex-1 < len(headers) {
-		return headers[m.colIndex-1].Path
+func buildColumnStrip(detail *engine.ColumnChunkDetail) *ui.ColumnStripVM {
+	if detail == nil {
+		return nil
 	}
-	return ""
-}
-
-func (m PageInspectorModel) nextColumnName() string {
-	headers := m.reader.Headers()
-	if m.colIndex+1 < len(headers) {
-		return headers[m.colIndex+1].Path
+	strip := &ui.ColumnStripVM{
+		Path: detail.Path,
+		Type: detail.Type,
+		Size: detail.TotalCompressed,
 	}
-	return ""
+	for _, p := range detail.Pages {
+		strip.Pages = append(strip.Pages, ui.PageSummaryVM{
+			Index:          p.Index,
+			NumValues:      p.NumValues,
+			CompressedSize: p.CompressedSize,
+		})
+	}
+	return strip
 }
 
 func (m PageInspectorModel) ensureValueVisible() PageInspectorModel {
@@ -492,8 +509,8 @@ func (m PageInspectorModel) BuildViewModel() ui.PageInspectorVM {
 		},
 		RGIndex:         m.rgIndex,
 		ColumnPath:      m.detail.Path,
-		PrevColumn:      m.prevColumnName(),
-		NextColumn:      m.nextColumnName(),
+		PrevColumn:      buildColumnStrip(m.prevDetail),
+		NextColumn:      buildColumnStrip(m.nextDetail),
 		ColumnType:      m.detail.Type,
 		Encoding:        m.detail.Encoding,
 		Compression:     m.detail.Compression,

@@ -190,8 +190,8 @@ func TestAppGridToPageInspector(t *testing.T) {
 
 	// Should render page inspector.
 	output := app.View()
-	if !containsStr(output, "Pages") {
-		t.Error("page inspector should contain 'Pages'")
+	if !containsStr(output, "Page 0") {
+		t.Error("page inspector should contain 'Page 0'")
 	}
 	if !containsStr(output, "TraceID") {
 		t.Error("page inspector should show TraceID column")

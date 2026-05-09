@@ -109,8 +109,8 @@ type PageInspectorVM struct {
 	BottomBar  BottomBarData
 	RGIndex    int
 	ColumnPath string
-	PrevColumn string // empty if at first column
-	NextColumn string // empty if at last column
+	PrevColumn *ColumnStripVM // nil if at first column
+	NextColumn *ColumnStripVM // nil if at last column
 	ColumnType string
 	Encoding   string
 	Compression string
@@ -131,6 +131,14 @@ type PageInspectorVM struct {
 
 	Width  int
 	Height int
+}
+
+// ColumnStripVM is an abbreviated column view for the sliding window.
+type ColumnStripVM struct {
+	Path     string
+	Type     string
+	Size     int64
+	Pages    []PageSummaryVM
 }
 
 // PageSummaryVM is the display data for one page in the page list.

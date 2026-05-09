@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	pageNavPanelWidth = 38 // must match model.navPanelWidth
+	pageStripWidth    = 22 // width per column strip (prev/next)
+	pageCenterWidth   = 30 // width for center (selected) column strip
 	pageValueNumWidth = 7  // width for "#" column in value viewer
 	pageValueColWidth = 24 // width for "value" column
 	pageValueHexWidth = 50 // width for "hex" column
@@ -32,25 +33,44 @@ func RenderPageInspector(vm ui.PageInspectorVM) string {
 	// Chrome takes 3 lines (top=2, bottom=1).
 	contentHeight := height - 3
 
-	// Two-panel layout — same nav panel width as grid.
-	leftWidth := pageNavPanelWidth
-	rightWidth := width - leftWidth - 3 // divider + padding
+	// Three-column strip layout + value panel.
+	// Compute widths: prev | center | next | values
+	hasPrev := vm.PrevColumn != nil
+	hasNext := vm.NextColumn != nil
 
-	left := renderPageList(vm, leftWidth-1, contentHeight) // -1 for border
-	right := renderValuePanel(vm, rightWidth-1, contentHeight) // -1 for PaddingLeft(1)
+	stripsWidth := pageCenterWidth
+	if hasPrev {
+		stripsWidth += pageStripWidth + 1
+	}
+	if hasNext {
+		stripsWidth += pageStripWidth + 1
+	}
+	valueWidth := width - stripsWidth - 2 // gap
 
-	leftPanel := leftPanelStyle.
-		Width(leftWidth).
-		Height(contentHeight).
-		Render(left)
+	// Build strip panels.
+	var stripPanels []string
 
-	rightPanel := lipgloss.NewStyle().
-		Width(rightWidth).
-		Height(contentHeight).
-		PaddingLeft(1).
-		Render(right)
+	if hasPrev {
+		prev := renderColumnStrip(vm.PrevColumn, pageStripWidth, contentHeight, false)
+		stripPanels = append(stripPanels, lipgloss.NewStyle().Width(pageStripWidth).Height(contentHeight).Render(prev))
+	}
 
-	content := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+	center := renderCenterStrip(vm, pageCenterWidth-1, contentHeight)
+	centerPanel := leftPanelStyle.Width(pageCenterWidth).Height(contentHeight).Render(center)
+	stripPanels = append(stripPanels, centerPanel)
+
+	if hasNext {
+		next := renderColumnStrip(vm.NextColumn, pageStripWidth, contentHeight, false)
+		stripPanels = append(stripPanels, lipgloss.NewStyle().Width(pageStripWidth).Height(contentHeight).Render(next))
+	}
+
+	stripsJoined := lipgloss.JoinHorizontal(lipgloss.Top, stripPanels...)
+
+	// Value panel.
+	valueContent := renderValuePanel(vm, valueWidth-1, contentHeight)
+	valuePanel := lipgloss.NewStyle().Width(valueWidth).Height(contentHeight).PaddingLeft(1).Render(valueContent)
+
+	content := lipgloss.JoinHorizontal(lipgloss.Top, stripsJoined, valuePanel)
 
 	return lipgloss.JoinVertical(lipgloss.Left, topBar, content, bottomBar)
 }
@@ -65,23 +85,13 @@ func pageEntryLines(page ui.PageSummaryVM) int {
 }
 
 // renderPageList renders the left panel with a windowed view of the page list.
-func renderPageList(vm ui.PageInspectorVM, width, height int) string {
+// renderCenterStrip renders the selected column's full page list.
+func renderCenterStrip(vm ui.PageInspectorVM, width, height int) string {
 	var items []string
 
-	// Hierarchy context + column chain.
-	items = append(items, dimText.Render(fmt.Sprintf("Row Group %d", vm.RGIndex)))
-
-	// Column navigation: prev ‹ [current] › next
-	if vm.PrevColumn != "" {
-		items = append(items, dimText.Render(truncate(vm.PrevColumn, width-2))+" ")
-	}
-	items = append(items, accentText.Render(fmt.Sprintf("[%s]", truncate(vm.ColumnPath, width-4))))
-	if vm.NextColumn != "" {
-		items = append(items, dimText.Render(truncate(vm.NextColumn, width-2)))
-	}
-
+	items = append(items, accentText.Render(truncate(fmt.Sprintf("[%s]", vm.ColumnPath), width)))
+	items = append(items, dimText.Render(truncate(vm.ColumnType, width)))
 	items = append(items, "")
-	items = append(items, headerText.Render("Pages"))
 
 	usedLines := len(items)
 
@@ -145,6 +155,36 @@ func renderPageList(vm ui.PageInspectorVM, width, height int) string {
 	}
 
 	// Pad to fill height.
+	for len(items) < height {
+		items = append(items, "")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, items...)
+}
+
+// renderColumnStrip renders an abbreviated side column (prev/next).
+func renderColumnStrip(col *ui.ColumnStripVM, width, height int, selected bool) string {
+	if col == nil {
+		return ""
+	}
+
+	var items []string
+
+	items = append(items, dimText.Render(truncate(col.Path, width)))
+	items = append(items, dimText.Render(truncate(col.Type, width)))
+	items = append(items, "")
+
+	for _, page := range col.Pages {
+		if len(items) >= height-1 {
+			items = append(items, dimText.Render("..."))
+			break
+		}
+		items = append(items, dimText.Render(fmt.Sprintf("P%d %s %s",
+			page.Index,
+			FormatNumber(page.NumValues),
+			FormatBytes(page.CompressedSize))))
+	}
+
 	for len(items) < height {
 		items = append(items, "")
 	}
