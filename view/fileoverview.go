@@ -32,7 +32,7 @@ func RenderFileOverview(vm ui.FileOverviewVM) string {
 	rightWidth := width - leftWidth - 3 // border + padding
 
 	left := renderRowGroupList(vm.RowGroups, vm.Selected, leftWidth, contentHeight)
-	right := renderFooterPanel(vm.FooterPanel, rightWidth, contentHeight)
+	right := renderFooterPanel(vm.FooterPanel, vm.SchemaTree, rightWidth, contentHeight)
 
 	// Left panel gets a right border (the divider).
 	leftPanel := leftPanelStyle.
@@ -82,7 +82,7 @@ func renderRowGroupList(groups []ui.RowGroupSummary, selected, width, height int
 	return lipgloss.JoinVertical(lipgloss.Left, items...)
 }
 
-func renderFooterPanel(data ui.FooterData, width, height int) string {
+func renderFooterPanel(data ui.FooterData, schema *ui.SchemaNodeVM, width, height int) string {
 	var sections []string
 
 	sections = append(sections, headerText.Render("Footer"))
@@ -139,7 +139,52 @@ func renderFooterPanel(data ui.FooterData, width, height int) string {
 		}
 	}
 
+	// Schema tree — fill remaining space.
+	if schema != nil && len(schema.Children) > 0 {
+		sections = append(sections, "") // spacer
+		sections = append(sections, headerText.Render("Schema:"))
+
+		var treeLines []string
+		for _, child := range schema.Children {
+			renderSchemaNode(child, width, &treeLines)
+		}
+
+		// Count actual rendered lines (sections may contain multi-line table output).
+		usedLines := 0
+		for _, s := range sections {
+			usedLines += strings.Count(s, "\n") + 1
+		}
+		remaining := height - usedLines - 1
+		if remaining < 0 {
+			remaining = 0
+		}
+		if len(treeLines) > remaining {
+			treeLines = treeLines[:remaining]
+			treeLines = append(treeLines, dimText.Render("  ..."))
+		}
+		sections = append(sections, treeLines...)
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+// renderSchemaNode recursively renders a schema tree node.
+func renderSchemaNode(node *ui.SchemaNodeVM, width int, lines *[]string) {
+	indent := strings.Repeat("  ", node.Depth)
+
+	if node.Leaf {
+		// Leaf: show name + type.
+		typStr := dimText.Render(node.Type)
+		nameStr := normalText.Render(truncate(node.Name, width-node.Depth*2-15))
+		*lines = append(*lines, fmt.Sprintf("%s  %s  %s", indent, nameStr, typStr))
+	} else {
+		// Group: show name with marker.
+		nameStr := accentText.Render("▼ " + node.Name)
+		*lines = append(*lines, indent+nameStr)
+		for _, child := range node.Children {
+			renderSchemaNode(child, width, lines)
+		}
+	}
 }
 
 func truncate(s string, maxLen int) string {

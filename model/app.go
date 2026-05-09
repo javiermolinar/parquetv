@@ -234,7 +234,42 @@ func (m FileOverviewModel) BuildViewModel() ui.FileOverviewVM {
 			TopColumns:     info.TopColumns,
 			KeyValues:      info.KeyValues,
 		},
-		Width:  m.width,
-		Height: m.height,
+		SchemaTree: buildSchemaTreeVM(info.Schema, 0),
+		Width:      m.width,
+		Height:     m.height,
 	}
+}
+
+// buildSchemaTreeVM converts engine schema nodes to view model nodes.
+// Skips list/element wrapper nodes (Parquet nested encoding noise).
+func buildSchemaTreeVM(node *engine.SchemaNode, depth int) *ui.SchemaNodeVM {
+	if node == nil {
+		return nil
+	}
+	vm := &ui.SchemaNodeVM{
+		Name:     node.Name,
+		Type:     node.Type,
+		Depth:    depth,
+		Leaf:     node.Leaf,
+		Expanded: true,
+	}
+	for _, child := range node.Children {
+		for _, resolved := range resolveSchemaChildren(child) {
+			vm.Children = append(vm.Children, buildSchemaTreeVM(resolved, depth+1))
+		}
+	}
+	return vm
+}
+
+// resolveSchemaChildren skips list/element wrapper nodes and returns
+// their meaningful children, flattening the Parquet nesting noise.
+func resolveSchemaChildren(node *engine.SchemaNode) []*engine.SchemaNode {
+	if node.Name == "list" || node.Name == "element" {
+		var result []*engine.SchemaNode
+		for _, child := range node.Children {
+			result = append(result, resolveSchemaChildren(child)...)
+		}
+		return result
+	}
+	return []*engine.SchemaNode{node}
 }

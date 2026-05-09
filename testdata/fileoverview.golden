@@ -17,14 +17,14 @@ Row Groups                            │ Footer
                                       │   rs.ss.Spans.Attrs.ValueUnsupported   1.3 KB               
                                       │                                                             
                                       │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
-                                      │                                                             
+                                      │ Schema:                                                     
+                                      │     TraceID  BYTE_ARRAY                                     
+                                      │     TraceIDText  STRING                                     
+                                      │     StartTimeUnixNano  INT(64,false)                        
+                                      │     EndTimeUnixNano  INT(64,false)                          
+                                      │     DurationNano  INT(64,false)                             
+                                      │     RootServiceName  STRING                                 
+                                      │     RootSpanName  STRING                                    
+                                      │   ▼ ServiceStats                                            
+                                      │   ...                                                       
   small.parquet                                               enter open  s schema  q quit  ? help  
