@@ -41,7 +41,7 @@ func RenderRowGroupGrid(vm ui.RowGroupGridVM) string {
 	}
 
 	navWidth := gridNavPanelWidth
-	navContent := renderGridNavPanel(vm, navWidth, panelHeight)
+	navContent := renderGridNavPanel(vm, navWidth-1, panelHeight) // -1 for border
 	leftPanel := leftPanelStyle.Width(navWidth).Height(panelHeight).Render(navContent)
 
 	gridWidth := width - navWidth - 3

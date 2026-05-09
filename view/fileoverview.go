@@ -31,7 +31,7 @@ func RenderFileOverview(vm ui.FileOverviewVM) string {
 	leftWidth := 38
 	rightWidth := width - leftWidth - 3 // border + padding
 
-	left := renderRowGroupList(vm.RowGroups, vm.Selected, leftWidth, contentHeight)
+	left := renderRowGroupList(vm.RowGroups, vm.Selected, leftWidth-1, contentHeight) // -1 for border
 	right := renderFooterPanel(vm, rightWidth, contentHeight)
 
 	// Left panel gets a right border (the divider).

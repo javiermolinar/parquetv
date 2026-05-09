@@ -36,7 +36,7 @@ func RenderPageInspector(vm ui.PageInspectorVM) string {
 	leftWidth := pageNavPanelWidth
 	rightWidth := width - leftWidth - 3 // divider + padding
 
-	left := renderPageList(vm, leftWidth, contentHeight)
+	left := renderPageList(vm, leftWidth-1, contentHeight) // -1 for border
 	right := renderValuePanel(vm, rightWidth-1, contentHeight) // -1 for PaddingLeft(1)
 
 	leftPanel := leftPanelStyle.
