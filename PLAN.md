@@ -60,6 +60,15 @@ Press enter on a column → show pages + values for that column chunk.
 - [x] Height-capped to remaining panel space with ... truncation
 - [x] No toggle — fills available space below top columns and KV metadata
 
+### Phase 8 — Dictionary View (7d29059)
+- [x] d key in page inspector opens dictionary overlay
+- [x] Shows entries sorted by frequency: value, count, %, visual bar
+- [x] Cursor navigation (j/k/g/G/ctrl+d/u), esc to close
+- [x] Lazy loaded on first d press, cached for column
+- [x] Silently ignored for non-dict-encoded columns
+- [x] Engine: ReadDictionary with frequency counting across all pages
+- [x] Verified on 337K-row file (48 RootServiceName entries)
+
 ## Next
 
 ### Phase 4 — Column Filters
@@ -95,8 +104,7 @@ Two-field filter for Attrs.Key + Value with cost breakdown.
 - [ ] Key scan + value lookup at matched positions
 - [ ] Cost reporting showing the full key scan cost
 
-### Phase 8 — Dictionary View + Predicate Simulation
-- [ ] d key: dictionary entries, frequencies, integer codes
+### Phase 8b — Predicate Simulation
 - [ ] f in Level 3: simulate pushdown, annotate pages SKIP/READ
 
 ### Phase 10 — Content/Inspect Panel (Level 3)
